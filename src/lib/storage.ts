@@ -1,0 +1,132 @@
+import { openDB, type IDBPDatabase } from "idb";
+import type { Channel, PlaylistMeta } from "./types";
+
+const DB_NAME = "tivi-db";
+const DB_VERSION = 2;
+
+interface TiviDB {
+  channels: Channel[];
+  playlists: PlaylistMeta[];
+}
+
+let dbPromise: Promise<IDBPDatabase<TiviDB>> | null = null;
+
+function getDB(): Promise<IDBPDatabase<TiviDB>> {
+  if (!dbPromise) {
+    dbPromise = openDB<TiviDB>(DB_NAME, DB_VERSION, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains("playlists")) {
+          db.createObjectStore("playlists", { keyPath: "id" });
+        }
+        if (!db.objectStoreNames.contains("channels")) {
+          const store = db.createObjectStore("channels", { keyPath: "id" });
+          store.createIndex("playlistId", "playlistId");
+        }
+      },
+    });
+  }
+  return dbPromise;
+}
+
+export async function savePlaylist(
+  meta: PlaylistMeta,
+  channels: Channel[]
+): Promise<void> {
+  const db = await getDB();
+  const tx = db.transaction(["playlists", "channels"], "readwrite");
+
+  await tx.objectStore("playlists").put(meta);
+
+  const channelStore = tx.objectStore("channels");
+  const channelsWithPlaylist = channels.map((ch) => ({
+    ...ch,
+    playlistId: meta.id,
+  }));
+
+  // Delete existing channels for this playlist, then add new ones
+  const index = channelStore.index("playlistId");
+  const existing = await index.getAll(meta.id);
+  for (const ch of existing) {
+    await channelStore.delete(ch.id);
+  }
+  for (const ch of channelsWithPlaylist) {
+    await channelStore.put(ch as Channel & { playlistId: string });
+  }
+
+  await tx.done;
+}
+
+export async function loadPlaylistMeta(
+  playlistId: string
+): Promise<PlaylistMeta | undefined> {
+  const db = await getDB();
+  return db.get("playlists", playlistId);
+}
+
+export async function loadPlaylistChannels(
+  playlistId: string
+): Promise<Channel[]> {
+  const db = await getDB();
+  const index = db.transaction("channels").store.index("playlistId");
+  return index.getAll(playlistId);
+}
+
+export async function listPlaylists(): Promise<PlaylistMeta[]> {
+  const db = await getDB();
+  return db.getAll("playlists");
+}
+
+export async function deletePlaylist(playlistId: string): Promise<void> {
+  const db = await getDB();
+  const tx = db.transaction(["playlists", "channels"], "readwrite");
+
+  await tx.objectStore("playlists").delete(playlistId);
+
+  const index = tx.objectStore("channels").index("playlistId");
+  const existing = await index.getAll(playlistId);
+  for (const ch of existing) {
+    await tx.objectStore("channels").delete(ch.id);
+  }
+
+  await tx.done;
+}
+
+export async function getActivePlaylistId(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("tivi-active-playlist");
+}
+
+export async function setActivePlaylistId(id: string): Promise<void> {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("tivi-active-playlist", id);
+}
+
+const DEFAULT_LINK_KEY = "tivi-default-link";
+export const BUILTIN_DEFAULT_LINK =
+  "https://raw.githubusercontent.com/vietng228/m3u/main/new.m3u";
+
+export async function getDefaultLink(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(DEFAULT_LINK_KEY) || BUILTIN_DEFAULT_LINK;
+}
+
+export async function setDefaultLink(url: string | null): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (url) {
+    localStorage.setItem(DEFAULT_LINK_KEY, url);
+  } else {
+    localStorage.removeItem(DEFAULT_LINK_KEY);
+  }
+}
+
+const AUTO_LOADED_KEY = "tivi-auto-loaded";
+
+export function getAutoLoaded(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(AUTO_LOADED_KEY) === "true";
+}
+
+export function setAutoLoaded(v: boolean): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(AUTO_LOADED_KEY, v ? "true" : "false");
+}
