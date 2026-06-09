@@ -93,6 +93,7 @@ export function parseM3U(content: string): Channel[] {
           catchup: currentExtinf.catchup,
           catchupDays: currentExtinf.catchupDays,
           catchupSource: currentExtinf.catchupSource,
+          order: channels.length,
         });
       }
       currentExtinf = {};

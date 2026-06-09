@@ -44,12 +44,14 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [firstChannelId, setFirstChannelId] = useState<string | null>(null);
 
-  // Tìm kênh VTV1 để làm mặc định, fallback về kênh đầu tiên
+  // Tìm VTV1 — IDB trả về channels sorted theo primary key (alphabetical),
+  // nên `vtv10hd` đứng trước `vtv1hd`. Dùng exact match để tránh nhầm.
   const resolveDefaultChannel = useCallback((chs: Channel[]) => {
-    const vtv1 = chs.find(
-      (ch) => ch.id === "vtv1hd" || ch.name.toLowerCase().startsWith("vtv1")
-    );
-    return vtv1 ? vtv1.id : chs.length > 0 ? chs[0].id : null;
+    const vtv1 = chs.find((ch) => ch.id === "vtv1hd");
+    if (vtv1) return vtv1.id;
+    const vtv1ByName = chs.find((ch) => ch.name.trim().toLowerCase() === "vtv1");
+    if (vtv1ByName) return vtv1ByName.id;
+    return chs.length > 0 ? chs[0].id : null;
   }, []);
 
   const refreshPlaylistList = useCallback(async () => {

@@ -11,6 +11,7 @@ export interface Channel {
   catchup?: string;
   catchupDays?: string;
   catchupSource?: string;
+  order: number;
 }
 
 export interface PlaylistMeta {

@@ -2,7 +2,7 @@ import { openDB, type IDBPDatabase } from "idb";
 import type { Channel, PlaylistMeta } from "./types";
 
 const DB_NAME = "tivi-db";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 interface TiviDB {
   channels: Channel[];
@@ -14,13 +14,23 @@ let dbPromise: Promise<IDBPDatabase<TiviDB>> | null = null;
 function getDB(): Promise<IDBPDatabase<TiviDB>> {
   if (!dbPromise) {
     dbPromise = openDB<TiviDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains("playlists")) {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 2) {
           db.createObjectStore("playlists", { keyPath: "id" });
-        }
-        if (!db.objectStoreNames.contains("channels")) {
           const store = db.createObjectStore("channels", { keyPath: "id" });
           store.createIndex("playlistId", "playlistId");
+        }
+        if (oldVersion >= 2) {
+          // Xoá toàn bộ DB cũ để reset sạch
+          db.deleteObjectStore("channels");
+          db.deleteObjectStore("playlists");
+          db.createObjectStore("playlists", { keyPath: "id" });
+          const store = db.createObjectStore("channels", { keyPath: "id" });
+          store.createIndex("playlistId", "playlistId");
+          // Xoá cả localStorage keys
+          localStorage.removeItem("tivi-active-playlist");
+          localStorage.removeItem("tivi-auto-loaded");
+          localStorage.removeItem("tivi-default-link");
         }
       },
     });
@@ -68,7 +78,20 @@ export async function loadPlaylistChannels(
 ): Promise<Channel[]> {
   const db = await getDB();
   const index = db.transaction("channels").store.index("playlistId");
-  return index.getAll(playlistId);
+  const channels = await index.getAll(playlistId);
+  channels.sort((a, b) => {
+    // VTV group lên đầu
+    const aIsVtv = a.group === "VTV" ? 0 : 1;
+    const bIsVtv = b.group === "VTV" ? 0 : 1;
+    if (aIsVtv !== bIsVtv) return aIsVtv - bIsVtv;
+
+    // Trong cùng nhóm, sort theo thứ tự file
+    if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+    if (a.order !== undefined) return -1;
+    if (b.order !== undefined) return 1;
+    return 0;
+  });
+  return channels;
 }
 
 export async function listPlaylists(): Promise<PlaylistMeta[]> {
