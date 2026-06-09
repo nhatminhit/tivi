@@ -7,11 +7,9 @@ import { Slider } from "@/components/ui/slider";
 interface VideoPlayerProps {
   url: string;
   name: string;
-  userAgent?: string;
-  referer?: string;
 }
 
-export default function VideoPlayer({ url, name, userAgent, referer }: VideoPlayerProps) {
+export default function VideoPlayer({ url, name }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,15 +26,21 @@ export default function VideoPlayer({ url, name, userAgent, referer }: VideoPlay
     if (!video) return;
     mountedRef.current = true;
     setLoading(true);
+    setUserInteracted(false);
 
-    if (referer) video.crossOrigin = "anonymous";
+    const loadingTimeout = setTimeout(() => {
+      if (mountedRef.current) setLoading(false);
+    }, 20000);
 
-    if (url.includes(".m3u8") && Hls.isSupported()) {
+    if (url.includes(".m3u8")) {
+      video.crossOrigin = "anonymous";
       const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
+        lowLatencyMode: false,
         backBufferLength: 30,
+        maxBufferLength: 30,
         startLevel: -1,
+        liveDurationInfinity: true,
+        liveSyncDurationCount: 3,
       });
       hlsRef.current = hls;
       hls.loadSource(url);
@@ -48,10 +52,9 @@ export default function VideoPlayer({ url, name, userAgent, referer }: VideoPlay
         if (mountedRef.current) setLoading(false);
       });
       hls.on(Hls.Events.ERROR, (_e, data) => {
-        if (data.fatal) {
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
-          else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
-        }
+        if (!data.fatal) return;
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
+        else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
       });
     } else {
       video.src = url;
@@ -61,6 +64,7 @@ export default function VideoPlayer({ url, name, userAgent, referer }: VideoPlay
     }
 
     return () => {
+      clearTimeout(loadingTimeout);
       mountedRef.current = false;
       if (hlsRef.current) {
         hlsRef.current.destroy();
@@ -70,9 +74,8 @@ export default function VideoPlayer({ url, name, userAgent, referer }: VideoPlay
       video.removeAttribute("src");
       video.load();
     };
-  }, [url, userAgent, referer]);
+  }, [url]);
 
-  // Track fullscreen state
   useEffect(() => {
     const handler = () => setFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", handler);
@@ -133,7 +136,6 @@ export default function VideoPlayer({ url, name, userAgent, referer }: VideoPlay
     return () => { v.removeEventListener("play", onPlay); v.removeEventListener("pause", onPause); };
   }, []);
 
-  // Keyboard
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -161,14 +163,12 @@ export default function VideoPlayer({ url, name, userAgent, referer }: VideoPlay
         preload="auto"
       />
 
-      {/* Loading spinner */}
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="h-8 w-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
         </div>
       )}
 
-      {/* Overlay "Nhấn để phát" — hiển thị khi chưa có tương tác */}
       {!userInteracted && !loading && (
         <div
           className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 transition-opacity cursor-pointer z-10"
@@ -181,7 +181,6 @@ export default function VideoPlayer({ url, name, userAgent, referer }: VideoPlay
         </div>
       )}
 
-      {/* Center play icon when paused (after user interacted) */}
       {paused && userInteracted && !loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity pointer-events-none">
           <div className="h-14 w-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
@@ -190,7 +189,6 @@ export default function VideoPlayer({ url, name, userAgent, referer }: VideoPlay
         </div>
       )}
 
-      {/* Bottom overlay: controls — chỉ hiển thị controls volume sau khi user đã play */}
       <div className="absolute bottom-0 left-0 right-0 p-2 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         {userInteracted && (
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>

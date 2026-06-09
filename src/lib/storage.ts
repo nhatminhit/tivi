@@ -27,10 +27,14 @@ function getDB(): Promise<IDBPDatabase<TiviDB>> {
           db.createObjectStore("playlists", { keyPath: "id" });
           const store = db.createObjectStore("channels", { keyPath: "id" });
           store.createIndex("playlistId", "playlistId");
-          // Xoá cả localStorage keys
-          localStorage.removeItem("tivi-active-playlist");
-          localStorage.removeItem("tivi-auto-loaded");
-          localStorage.removeItem("tivi-default-link");
+          // Xoá cả localStorage keys (có thể fail trong private browsing)
+          try {
+            localStorage.removeItem("tivi-active-playlist");
+            localStorage.removeItem("tivi-auto-loaded");
+            localStorage.removeItem("tivi-default-link");
+          } catch {
+            // noop — private browsing hoặc sandboxed iframe
+          }
         }
       },
     });

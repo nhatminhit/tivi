@@ -16,9 +16,6 @@ import {
   deletePlaylist,
   getActivePlaylistId,
   setActivePlaylistId,
-  getDefaultLink,
-  getAutoLoaded,
-  setAutoLoaded,
 } from "@/lib/storage";
 import { generatePlaylistId, parseM3U } from "@/lib/m3u-parser";
 import { toast } from "sonner";
@@ -29,7 +26,7 @@ interface PlaylistContextType {
   loading: boolean;
   allPlaylists: PlaylistMeta[];
   firstChannelId: string | null;
-  loadPlaylist: (id: string) => Promise<void>;
+  loadPlaylist: (id: string) => Promise<number>;
   saveAndActivate: (meta: PlaylistMeta, channels: Channel[]) => Promise<string>;
   removePlaylist: (id: string) => Promise<void>;
   fetchAndSaveFromUrl: (url: string) => Promise<void>;
@@ -71,9 +68,12 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
         setChannels(chs);
         setFirstChannelId(resolveDefaultChannel(chs));
         await setActivePlaylistId(id);
+        return chs.length; // return count để caller kiểm tra
       }
+      return 0;
     } catch (err) {
       console.error("Failed to load playlist:", err);
+      return 0;
     } finally {
       setLoading(false);
     }
@@ -107,15 +107,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
 
   const fetchAndSaveFromUrl = useCallback(
     async (url: string) => {
-      let fetchUrl = url;
-      if (fetchUrl.includes("github.com") && fetchUrl.includes("/blob/")) {
-        fetchUrl = fetchUrl
-          .replace("github.com", "raw.githubusercontent.com")
-          .replace("/blob/", "/");
-      }
-      const res = await fetch(fetchUrl, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; TiviIPTV/1.0)" },
-      });
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const content = await res.text();
       const parsed = parseM3U(content);
@@ -145,26 +137,22 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
       if (activeId) {
         const existingMeta = await loadPlaylistMeta(activeId);
         if (existingMeta) {
-          await loadPlaylist(activeId);
-          return;
+          const count = await loadPlaylist(activeId);
+          if (count > 0) return; // có channels → done
         }
       }
 
-      const defaultLink = await getDefaultLink();
-      if (defaultLink && !getAutoLoaded()) {
-        setAutoLoaded(true);
-        try {
-          toast.info("Đang tải danh sách kênh...");
-          await fetchAndSaveFromUrl(defaultLink);
-          toast.success("Đã tải danh sách kênh");
-        } catch (err: any) {
-          toast.error(err.message || "Không thể tải playlist mặc định");
-          setLoading(false);
-          return;
-        }
+      // Chưa có cache → fetch từ hardcoded playlist
+      try {
+        toast.info("Đang tải danh sách kênh...");
+        await fetchAndSaveFromUrl(
+          "https://raw.githubusercontent.com/vietng228/m3u/main/new.m3u"
+        );
+        toast.success("Đã tải danh sách kênh");
+      } catch (err: any) {
+        toast.error(err.message || "Không thể tải playlist");
+        setLoading(false);
       }
-
-      setLoading(false);
     })();
   }, [loadPlaylist, refreshPlaylistList, fetchAndSaveFromUrl]);
 

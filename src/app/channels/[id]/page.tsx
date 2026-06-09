@@ -58,8 +58,6 @@ export default function ChannelPage() {
           <VideoPlayer
             url={channel.url}
             name={channel.name}
-            userAgent={channel.userAgent}
-            referer={channel.referer}
           />
         </div>
         <div className="flex items-center gap-3 px-4 py-2.5 bg-card border-t">
