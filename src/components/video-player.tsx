@@ -36,9 +36,6 @@ export default function VideoPlayer({ url, name, showFullscreen }: VideoPlayerPr
     if (url.includes(".m3u8")) {
       video.crossOrigin = "anonymous";
 
-      // Derive Referer from stream URL so fptplay/epz servers don't 403
-      const streamOrigin = new URL(url).origin;
-
       const hls = new Hls({
         lowLatencyMode: false,
         backBufferLength: 30,
@@ -46,10 +43,6 @@ export default function VideoPlayer({ url, name, showFullscreen }: VideoPlayerPr
         startLevel: -1,
         liveDurationInfinity: true,
         liveSyncDurationCount: 3,
-        xhrSetup: (xhr: XMLHttpRequest) => {
-          xhr.setRequestHeader("Referer", streamOrigin + "/");
-          xhr.setRequestHeader("Origin", streamOrigin);
-        },
       });
       hlsRef.current = hls;
       hls.loadSource(url);
