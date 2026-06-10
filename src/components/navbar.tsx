@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Tv, Search, Heart, X } from "lucide-react";
+import { Tv, Search, Heart, X, QrCode } from "lucide-react";
 import { usePlaylist } from "@/hooks/use-playlist";
 
 const categories = [
@@ -117,6 +117,18 @@ export default function Navbar() {
               <Search className="h-4.5 w-4.5" />
             </button>
           )}
+
+          {/* QR Code */}
+          <Link
+            href="/qr"
+            className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${
+              pathname === "/qr"
+                ? "text-primary bg-primary/15"
+                : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+            }`}
+          >
+            <QrCode className="h-4.5 w-4.5" />
+          </Link>
 
           {/* Favorites */}
           <Link
