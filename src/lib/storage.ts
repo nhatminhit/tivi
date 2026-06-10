@@ -2,7 +2,7 @@ import { openDB, type IDBPDatabase } from "idb";
 import type { Channel, PlaylistMeta } from "./types";
 
 const DB_NAME = "tivi-db";
-const DB_VERSION = 3;
+const DB_VERSION = 5;
 
 interface TiviDB {
   channels: Channel[];
@@ -130,7 +130,7 @@ export async function setActivePlaylistId(id: string): Promise<void> {
 
 const DEFAULT_LINK_KEY = "tivi-default-link";
 export const BUILTIN_DEFAULT_LINK =
-  "https://raw.githubusercontent.com/vietng228/m3u/main/new.m3u";
+  "/channels.m3u";
 
 export async function getDefaultLink(): Promise<string | null> {
   if (typeof window === "undefined") return null;
@@ -146,14 +146,3 @@ export async function setDefaultLink(url: string | null): Promise<void> {
   }
 }
 
-const AUTO_LOADED_KEY = "tivi-auto-loaded";
-
-export function getAutoLoaded(): boolean {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(AUTO_LOADED_KEY) === "true";
-}
-
-export function setAutoLoaded(v: boolean): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(AUTO_LOADED_KEY, v ? "true" : "false");
-}

@@ -16,6 +16,7 @@ import {
   deletePlaylist,
   getActivePlaylistId,
   setActivePlaylistId,
+  getDefaultLink,
 } from "@/lib/storage";
 import { generatePlaylistId, parseM3U } from "@/lib/m3u-parser";
 import { toast } from "sonner";
@@ -41,13 +42,14 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [firstChannelId, setFirstChannelId] = useState<string | null>(null);
 
-  // Tìm VTV1 — IDB trả về channels sorted theo primary key (alphabetical),
-  // nên `vtv10hd` đứng trước `vtv1hd`. Dùng exact match để tránh nhầm.
+  // Tìm VTV1 — ưu tiên theo id cũ, sau đó tên, rồi group+name combo
   const resolveDefaultChannel = useCallback((chs: Channel[]) => {
     const vtv1 = chs.find((ch) => ch.id === "vtv1hd");
     if (vtv1) return vtv1.id;
     const vtv1ByName = chs.find((ch) => ch.name.trim().toLowerCase() === "vtv1");
     if (vtv1ByName) return vtv1ByName.id;
+    const vtv1ByGroup = chs.find((ch) => ch.group === "VTV" && ch.name.trim().toLowerCase() === "vtv1");
+    if (vtv1ByGroup) return vtv1ByGroup.id;
     return chs.length > 0 ? chs[0].id : null;
   }, []);
 
@@ -142,13 +144,16 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Chưa có cache → fetch từ hardcoded playlist
+      // Chưa có cache → fetch từ default link
       try {
-        toast.info("Đang tải danh sách kênh...");
-        await fetchAndSaveFromUrl(
-          "https://raw.githubusercontent.com/vietng228/m3u/main/new.m3u"
-        );
-        toast.success("Đã tải danh sách kênh");
+        const defaultLink = await getDefaultLink();
+        if (defaultLink) {
+          toast.info("Đang tải danh sách kênh...");
+          await fetchAndSaveFromUrl(defaultLink);
+          toast.success("Đã tải danh sách kênh");
+        } else {
+          setLoading(false);
+        }
       } catch (err: any) {
         toast.error(err.message || "Không thể tải playlist");
         setLoading(false);

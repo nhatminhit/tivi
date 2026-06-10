@@ -1,7 +1,6 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
-import { Play } from "lucide-react";
+import { Play, Tv } from "lucide-react";
 import type { Channel } from "@/lib/types";
 
 interface ChannelCardProps {
@@ -14,27 +13,30 @@ export default function ChannelCard({ channel, listMode = false }: ChannelCardPr
     return (
       <Link
         href={`/channels/${encodeURIComponent(channel.id)}`}
-        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors group"
+        className="group flex items-center gap-3 px-4 py-3 rounded-xl glass-card"
       >
-        <div className="w-8 h-8 rounded overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/10">
           {channel.logo ? (
-            <Image
+            <img
               src={channel.logo}
               alt={channel.name}
-              width={32}
-              height={32}
-              className="object-contain w-full h-full"
-              unoptimized
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
+              className="w-full h-full object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
           ) : (
-            <Play className="h-4 w-4 text-muted-foreground" />
+            <Tv className="h-4 w-4 text-muted-foreground/50" />
           )}
         </div>
-        <span className="text-sm truncate flex-1">{channel.name}</span>
-        <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium truncate">{channel.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{channel.group}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="live-badge px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
+            Live
+          </span>
+          <Play className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:text-primary transition-all" />
+        </div>
       </Link>
     );
   }
@@ -42,52 +44,41 @@ export default function ChannelCard({ channel, listMode = false }: ChannelCardPr
   return (
     <Link
       href={`/channels/${encodeURIComponent(channel.id)}`}
-      className="group relative flex flex-col items-center gap-2 p-3 rounded-xl border bg-card hover:bg-accent transition-all hover:shadow-md hover:-translate-y-0.5"
+      className="group relative glass-card rounded-2xl overflow-hidden"
     >
-      <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+      {/* Channel logo */}
+      <div className="aspect-video w-full bg-gradient-to-br from-white/[0.03] to-white/[0.01] flex items-center justify-center relative overflow-hidden">
         {channel.logo ? (
-          <Image
+          <img
             src={channel.logo}
             alt={channel.name}
-            width={64}
-            height={64}
-            className="object-contain w-full h-full"
-            unoptimized
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
+            className="w-16 h-16 object-contain group-hover:scale-110 transition-transform duration-500"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
-          <TvIcon />
+          <Tv className="h-10 w-10 text-muted-foreground/30" />
         )}
-      </div>
-      <span className="text-xs text-center leading-tight line-clamp-2">{channel.name}</span>
-      {/* Hover overlay */}
-      <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="h-10 w-10 rounded-full bg-primary/90 flex items-center justify-center">
-            <Play className="h-5 w-5 text-white ml-0.5" />
+
+        {/* Live badge */}
+        <div className="absolute top-3 left-3">
+          <span className="live-badge px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase tracking-wider">
+            Live
+          </span>
+        </div>
+
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
+          <div className="h-12 w-12 rounded-full bg-primary/90 flex items-center justify-center shadow-xl shadow-primary/30 opacity-0 group-hover:opacity-100 group-hover:scale-100 scale-75 transition-all duration-300">
+            <Play className="h-5 w-5 text-white ml-0.5" fill="white" />
           </div>
         </div>
       </div>
-    </Link>
-  );
-}
 
-function TvIcon() {
-  return (
-    <svg
-      className="h-8 w-8 text-muted-foreground"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.5}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v12.75c0 .621.504 1.125 1.125 1.125Z"
-      />
-    </svg>
+      {/* Info */}
+      <div className="p-3">
+        <p className="text-sm font-semibold truncate mb-0.5">{channel.name}</p>
+        <p className="text-xs text-muted-foreground truncate">{channel.group}</p>
+      </div>
+    </Link>
   );
 }

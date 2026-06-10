@@ -7,9 +7,10 @@ import { Slider } from "@/components/ui/slider";
 interface VideoPlayerProps {
   url: string;
   name: string;
+  showFullscreen?: boolean;
 }
 
-export default function VideoPlayer({ url, name }: VideoPlayerProps) {
+export default function VideoPlayer({ url, name, showFullscreen }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -187,6 +188,16 @@ export default function VideoPlayer({ url, name }: VideoPlayerProps) {
             <Play className="h-6 w-6 text-white ml-1" fill="white" />
           </div>
         </div>
+      )}
+
+      {showFullscreen && (
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+          className="absolute top-2 right-2 z-10 h-9 w-9 rounded bg-black/50 hover:bg-black/70 flex items-center justify-center text-white transition-colors"
+          title={fullscreen ? "Thoát fullscreen" : "Phóng to"}
+        >
+          {fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+        </button>
       )}
 
       <div className="absolute bottom-0 left-0 right-0 p-2 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
