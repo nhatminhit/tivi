@@ -453,14 +453,12 @@ http://118.107.85.5:1935/live/smil:LTV.smil/chunklist.m3u8
 https://live.fptplay53.net/epzsd1/cantho02_vhls.smil/chunklist.m3u8
 #EXTINF:-1 tvg-logo="https://vn.xemtv.net/image/strongman.jpg" group-title="XemTV",Strong Man TV
 https://rightsboosterltd-scl-1-eu.rakuten.wurl.tv/playlist.m3u8
-#EXTINF:-1 tvg-logo="http://static3.thvli.vn/assets/thumbnail/2025/08/28/gb1vfh5n_buttonchanels_thvl_2025_sua-1.png" group-title="Truyền hình địa phương",Vĩnh Long 5
+#EXTINF:-1 tvg-logo="https://static3.thvli.vn/assets/thumbnail/2025/08/28/gb1vfh5n_buttonchanels_thvl_2025_sua-1.png" group-title="Truyền hình địa phương",Vĩnh Long 5
 https://live.fptplay53.net/epzsd1/vinhlong5_vhls.smil/chunklist.m3u8
 #EXTINF:-1 tvg-logo="https://i.imgur.com/PfETBEp.png" group-title="Truyền hình địa phương",Đồng Tháp 2
 https://live.fptplay53.net/epzsd1/dongthaphd_vhls.smil/chunklist_b5000000.m3u8
 #EXTINF:-1 tvg-logo="https://i.imgur.com/0fGI8cJ.png" group-title="Truyền hình địa phương",Cần Thơ 1
 https://live.fptplay53.net/epzsd1/cantho_hls.smil/chunklist.m3u8
-#EXTINF:-1 tvg-logo="https://vn.xemtv.net/image/sony-sports3.png" group-title="XemTV",SONY SPORTS 3
-https://tv5.hoichoi24.com/1012/tracks-v1a1/mono.m3u8
 #EXTINF:-1 tvg-logo="https://vn.xemtv.net/image/espn6.png" group-title="XemTV",ESPN6
 https://super-cdn.link/espn6/index.m3u8
 #EXTINF:-1 tvg-logo="https://i.imgur.com/0fGI8cJ.png" group-title="Truyền hình địa phương",Cần Thơ 3
