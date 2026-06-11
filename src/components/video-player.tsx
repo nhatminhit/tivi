@@ -7,11 +7,10 @@ import { Slider } from "@/components/ui/slider";
 interface VideoPlayerProps {
   url: string;
   name: string;
-  showFullscreen?: boolean;
   backupUrls?: string[];
 }
 
-export default function VideoPlayer({ url, name, showFullscreen, backupUrls }: VideoPlayerProps) {
+export default function VideoPlayer({ url, name, backupUrls }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -21,6 +20,8 @@ export default function VideoPlayer({ url, name, showFullscreen, backupUrls }: V
   const [muted, setMuted] = useState(true);
   const [volume, setVolume] = useState(1);
   const [userInteracted, setUserInteracted] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   const backupIndexRef = useRef(0);
   const allUrls = [url, ...(backupUrls || [])];
@@ -185,6 +186,12 @@ export default function VideoPlayer({ url, name, showFullscreen, backupUrls }: V
     else c.requestFullscreen();
   }, []);
 
+  const flashControls = useCallback(() => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+  }, []);
+
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -211,6 +218,7 @@ export default function VideoPlayer({ url, name, showFullscreen, backupUrls }: V
       ref={containerRef}
       className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden cursor-pointer select-none group"
       onClick={togglePlay}
+      onTouchStart={flashControls}
       title={name}
     >
       <video
@@ -230,7 +238,7 @@ export default function VideoPlayer({ url, name, showFullscreen, backupUrls }: V
 
       {!userInteracted && !loading && (
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 transition-opacity cursor-pointer z-10"
+          className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 transition-opacity cursor-pointer z-[5]"
           onClick={(e) => { e.stopPropagation(); handlePlay(); }}
         >
           <div className="h-16 w-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center hover:bg-white/30 transition-colors mb-3">
@@ -248,17 +256,10 @@ export default function VideoPlayer({ url, name, showFullscreen, backupUrls }: V
         </div>
       )}
 
-      {showFullscreen && (
-        <button
-          onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-          className="absolute top-2 right-2 z-10 h-9 w-9 rounded bg-black/50 hover:bg-black/70 flex items-center justify-center text-white transition-colors"
-          title={fullscreen ? "Thoát fullscreen" : "Phóng to"}
-        >
-          {fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-        </button>
-      )}
-
-      <div className="absolute bottom-0 left-0 right-0 p-2 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute bottom-0 left-0 right-0 p-2 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+        data-show={showControls || undefined}
+        style={{ opacity: showControls ? 1 : undefined }}
+      >
         {userInteracted && (
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             <button

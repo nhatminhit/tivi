@@ -1,6 +1,6 @@
 #EXTM3U
-#EXTINF:-1 group-title="VTV" tvg-logo="https://i.imgur.com/nfkmvAY.png",VTV1
-https://live.fptplay53.net/fnxhd1/vtv1hd_vhls.smil/chunklist_b5000000.m3u8
+#EXTINF:-1 tvg-id="vtv1" group-title="VTV" tvg-logo="https://i.imgur.com/nfkmvAY.png",VTV1
+https://vtvgolive-ssaimh.vtvdigital.vn/xsPjCsnpeUF-4Ytuw_RNvA/1781122390/manifest/vtv1/playlist_720p.m3u8
 #EXTINF:-1 group-title="VTV" tvg-logo="https://i.imgur.com/BVwi3K3.png",VTV2
 https://live.fptplay53.net/live/media/vtv2/live247-hls-avc/vtv2-avc1_5600000=10000-mp4a_131600=20000.m3u8
 #EXTINF:-1 group-title="VTV" tvg-logo="https://i.imgur.com/7rLCvgS.png",VTV3

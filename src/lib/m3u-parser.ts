@@ -1,5 +1,16 @@
 import { Channel } from "./types";
 
+function slugify(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export interface ParsedChannel {
   name: string;
   url: string;
@@ -46,7 +57,7 @@ export function parseM3U(content: string): Channel[] {
 
       // Extract tvg-id
       const tvgIdMatch = attrStr.match(/tvg-id="([^"]*)"/);
-      currentExtinf.tvgId = tvgIdMatch ? tvgIdMatch[1] : `ch-${i}`;
+      currentExtinf.tvgId = tvgIdMatch ? tvgIdMatch[1] : slugify(name);
       currentExtinf.tvgName = currentExtinf.tvgId || "";
 
       // Extract tvg-logo
@@ -81,7 +92,7 @@ export function parseM3U(content: string): Channel[] {
     } else if (line.startsWith("http://") || line.startsWith("https://")) {
       if (currentExtinf.name) {
         channels.push({
-          id: currentExtinf.tvgId || `ch-${channels.length}`,
+          id: currentExtinf.tvgId || slugify(name) || `ch-${channels.length}`,
           name: currentExtinf.name,
           url: line,
           logo: currentExtinf.logo || "",

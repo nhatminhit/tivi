@@ -109,7 +109,7 @@ export default function ChannelPage() {
           className={`bg-black shrink-0 ${mobileListOpen ? "h-[40dvh]" : "h-[calc(100dvh-4rem-3.5rem)]"}`}
           style={{ transition: "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
         >
-          <VideoPlayer key={activeServer} url={servers[activeServer]?.url || channel.url} name={channel.name} showFullscreen />
+          <VideoPlayer key={activeServer} url={servers[activeServer]?.url || channel.url} name={channel.name} />
         </div>
 
         {/* Channel info bar */}

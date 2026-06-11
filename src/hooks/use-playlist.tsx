@@ -23,9 +23,12 @@ import { toast } from "sonner";
 
 // Backup URLs — tự failover khi primary link bị chết
 const CHANNEL_BACKUPS: Record<string, string[]> = {
-  vtv1hd: ["https://vtvgolive-ssaimh.vtvdigital.vn/xsPjCsnpeUF-4Ytuw_RNvA/1781122390/manifest/vtv1/playlist_720p.m3u8"],
-  vtv1: ["https://vtvgolive-ssaimh.vtvdigital.vn/xsPjCsnpeUF-4Ytuw_RNvA/1781122390/manifest/vtv1/playlist_720p.m3u8"],
+  vtv1hd: ["https://live.fptplay53.net/fnxhd1/vtv1hd_vhls.smil/chunklist_b5000000.m3u8"],
+  vtv1: ["https://live.fptplay53.net/fnxhd1/vtv1hd_vhls.smil/chunklist_b5000000.m3u8"],
 };
+
+const PLAYLIST_AUTO_REFRESH_VERSION = 2;
+const REFRESH_VERSION_KEY = "tivi-playlist-refresh-version";
 
 function mergeBackupUrls(channels: Channel[]): Channel[] {
   return channels.map((ch) => {
@@ -148,17 +151,37 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     [saveAndActivate]
   );
 
-  // Init: load active playlist — nếu chưa có, tự động fetch từ link mặc định
+  // Init: load active playlist — tự refresh khi version thay đổi
   useEffect(() => {
     (async () => {
       await refreshPlaylistList();
-      const activeId = await getActivePlaylistId();
 
+      // Check auto-refresh version
+      let needRefresh = false;
+      try {
+        const stored = localStorage.getItem(REFRESH_VERSION_KEY);
+        if (stored !== String(PLAYLIST_AUTO_REFRESH_VERSION)) {
+          needRefresh = true;
+        }
+      } catch { /* private browsing */ }
+
+      if (needRefresh) {
+        try {
+          const defaultLink = await getDefaultLink();
+          if (defaultLink) {
+            await fetchAndSaveFromUrl(defaultLink);
+            localStorage.setItem(REFRESH_VERSION_KEY, String(PLAYLIST_AUTO_REFRESH_VERSION));
+          }
+        } catch { /* noop */ }
+        return;
+      }
+
+      const activeId = await getActivePlaylistId();
       if (activeId) {
         const existingMeta = await loadPlaylistMeta(activeId);
         if (existingMeta) {
           const count = await loadPlaylist(activeId);
-          if (count > 0) return; // có channels → done
+          if (count > 0) return;
         }
       }
 
