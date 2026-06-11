@@ -137,9 +137,17 @@ export default function VideoPlayer({ url, name, backupUrls }: VideoPlayerProps)
   }, [url]);
 
   useEffect(() => {
-    const handler = () => setFullscreen(!!document.fullscreenElement);
+    const handler = () => {
+      const fs = !!document.fullscreenElement;
+      const webkitFs = !!(document as any).webkitFullscreenElement;
+      setFullscreen(fs || webkitFs);
+    };
     document.addEventListener("fullscreenchange", handler);
-    return () => document.removeEventListener("fullscreenchange", handler);
+    document.addEventListener("webkitfullscreenchange", handler);
+    return () => {
+      document.removeEventListener("fullscreenchange", handler);
+      document.removeEventListener("webkitfullscreenchange", handler);
+    };
   }, []);
 
   const handlePlay = useCallback(() => {
@@ -180,10 +188,18 @@ export default function VideoPlayer({ url, name, backupUrls }: VideoPlayerProps)
   }, []);
 
   const toggleFullscreen = useCallback(() => {
-    const c = containerRef.current;
-    if (!c) return;
-    if (document.fullscreenElement) document.exitFullscreen();
-    else c.requestFullscreen();
+    const v = videoRef.current;
+    if (!v) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+      return;
+    }
+    // iOS Safari — dùng webkitEnterFullscreen trên video element
+    if (v.webkitEnterFullscreen) {
+      v.webkitEnterFullscreen();
+    } else {
+      v.requestFullscreen();
+    }
   }, []);
 
   const flashControls = useCallback(() => {
