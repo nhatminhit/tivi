@@ -92,7 +92,7 @@ export function parseM3U(content: string): Channel[] {
     } else if (line.startsWith("http://") || line.startsWith("https://")) {
       if (currentExtinf.name) {
         channels.push({
-          id: currentExtinf.tvgId || slugify(name) || `ch-${channels.length}`,
+          id: currentExtinf.tvgId || slugify(currentExtinf.name || "") || `ch-${channels.length}`,
           name: currentExtinf.name,
           url: line,
           logo: currentExtinf.logo || "",
