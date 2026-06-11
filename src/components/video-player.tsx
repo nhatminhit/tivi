@@ -21,8 +21,14 @@ export default function VideoPlayer({ url, name, backupUrls }: VideoPlayerProps)
   const [volume, setVolume] = useState(1);
   const [userInteracted, setUserInteracted] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
+
+  useEffect(() => {
+    const ios = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(ios);
+  }, []);
   const backupIndexRef = useRef(0);
   const allUrls = [url, ...(backupUrls || [])];
 
@@ -276,7 +282,7 @@ export default function VideoPlayer({ url, name, backupUrls }: VideoPlayerProps)
         data-show={showControls || undefined}
         style={{ opacity: showControls ? 1 : undefined }}
       >
-        {userInteracted && (
+        {userInteracted && !isIOS && (
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={(e) => {
