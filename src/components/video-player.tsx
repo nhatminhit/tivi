@@ -195,8 +195,8 @@ export default function VideoPlayer({ url, name, backupUrls }: VideoPlayerProps)
       return;
     }
     // iOS Safari — dùng webkitEnterFullscreen trên video element
-    if (v.webkitEnterFullscreen) {
-      v.webkitEnterFullscreen();
+    if ((v as any).webkitEnterFullscreen) {
+      (v as any).webkitEnterFullscreen();
     } else {
       v.requestFullscreen();
     }
