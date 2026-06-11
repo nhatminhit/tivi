@@ -21,6 +21,24 @@ import {
 import { generatePlaylistId, parseM3U } from "@/lib/m3u-parser";
 import { toast } from "sonner";
 
+// Backup URLs — tự failover khi primary link bị chết
+const CHANNEL_BACKUPS: Record<string, string[]> = {
+  vtv1hd: ["https://vtvgolive-ssaimh.vtvdigital.vn/xsPjCsnpeUF-4Ytuw_RNvA/1781122390/manifest/vtv1/playlist_720p.m3u8"],
+  vtv1: ["https://vtvgolive-ssaimh.vtvdigital.vn/xsPjCsnpeUF-4Ytuw_RNvA/1781122390/manifest/vtv1/playlist_720p.m3u8"],
+};
+
+function mergeBackupUrls(channels: Channel[]): Channel[] {
+  return channels.map((ch) => {
+    const backups = CHANNEL_BACKUPS[ch.id] || CHANNEL_BACKUPS[ch.name.trim().toLowerCase()];
+    if (backups && backups.length > 0) {
+      const existing = ch.backupUrls || [];
+      const merged = [...new Set([...existing, ...backups])];
+      return { ...ch, backupUrls: merged };
+    }
+    return ch;
+  });
+}
+
 interface PlaylistContextType {
   channels: Channel[];
   meta: PlaylistMeta | null;
@@ -67,7 +85,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
       ]);
       if (m) {
         setMeta(m);
-        setChannels(chs);
+        setChannels(mergeBackupUrls(chs));
         setFirstChannelId(resolveDefaultChannel(chs));
         await setActivePlaylistId(id);
         return chs.length; // return count để caller kiểm tra

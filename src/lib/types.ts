@@ -11,7 +11,14 @@ export interface Channel {
   catchup?: string;
   catchupDays?: string;
   catchupSource?: string;
+  backupUrls?: string[];
   order: number;
+}
+
+export interface ServerInfo {
+  index: number;
+  label: string;
+  url: string;
 }
 
 export interface PlaylistMeta {

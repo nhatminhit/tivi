@@ -5,8 +5,10 @@ import Link from "next/link";
 import { usePlaylist } from "@/hooks/use-playlist";
 import VideoPlayer from "@/components/video-player";
 import ChannelSidebar from "@/components/channel-sidebar";
+import ServerSelector from "@/components/server-selector";
 import { Button } from "@/components/ui/button";
 import { Tv, PanelLeftClose, ChevronLeft, ChevronRight } from "lucide-react";
+import type { ServerInfo } from "@/lib/types";
 
 export default function ChannelPage() {
   const params = useParams();
@@ -39,6 +41,25 @@ export default function ChannelPage() {
 
   const prevChannel = channelIndex > 0 ? channels[channelIndex - 1] : null;
   const nextChannel = channelIndex >= 0 && channelIndex < channels.length - 1 ? channels[channelIndex + 1] : null;
+
+  const servers = useMemo(() => {
+    if (!channel) return [];
+    const list: ServerInfo[] = [
+      { index: 0, label: "Mặc định", url: channel.url },
+      ...(channel.backupUrls || []).map((url, i) => ({
+        index: i + 1,
+        label: `Server ${i + 2}`,
+        url,
+      })),
+    ];
+    return list;
+  }, [channel]);
+
+  const [activeServer, setActiveServer] = useState(0);
+
+  useEffect(() => {
+    setActiveServer(0);
+  }, [channel?.id]);
 
   const startHideTimer = useCallback(() => {
     clearTimeout(hideTimerRef.current);
@@ -88,7 +109,7 @@ export default function ChannelPage() {
           className={`bg-black shrink-0 ${mobileListOpen ? "h-[40dvh]" : "h-[calc(100dvh-4rem-3.5rem)]"}`}
           style={{ transition: "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
         >
-          <VideoPlayer url={channel.url} name={channel.name} showFullscreen />
+          <VideoPlayer key={activeServer} url={servers[activeServer]?.url || channel.url} name={channel.name} showFullscreen />
         </div>
 
         {/* Channel info bar */}
@@ -108,6 +129,9 @@ export default function ChannelPage() {
               <p className="text-xs text-muted-foreground truncate">{channel.group}</p>
             </div>
           </div>
+          {servers.length > 1 && (
+            <ServerSelector servers={servers} activeIndex={activeServer} onSelect={setActiveServer} />
+          )}
           <button
             onClick={() => setMobileListOpen((v) => !v)}
             className="text-xs text-primary font-medium hover:text-primary/80 transition-colors"
@@ -140,7 +164,7 @@ export default function ChannelPage() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Player */}
           <div className="flex-1 bg-black min-h-0 relative">
-            <VideoPlayer url={channel.url} name={channel.name} />
+            <VideoPlayer key={activeServer} url={servers[activeServer]?.url || channel.url} name={channel.name} />
 
             {/* Navigation arrows */}
             {prevChannel && (
@@ -178,6 +202,9 @@ export default function ChannelPage() {
               <p className="text-sm font-semibold truncate">{channel.name}</p>
               <p className="text-xs text-muted-foreground truncate">{channel.group}</p>
             </div>
+            {servers.length > 1 && (
+              <ServerSelector servers={servers} activeIndex={activeServer} onSelect={setActiveServer} />
+            )}
             <span className="live-badge px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white uppercase tracking-wider">
               Live
             </span>
