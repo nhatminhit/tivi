@@ -27,7 +27,7 @@ const CHANNEL_BACKUPS: Record<string, string[]> = {
   vtv1: ["https://live.fptplay53.net/fnxhd1/vtv1hd_vhls.smil/chunklist_b5000000.m3u8"],
 };
 
-const PLAYLIST_AUTO_REFRESH_VERSION = 2;
+const PLAYLIST_AUTO_REFRESH_VERSION = 3;
 const REFRESH_VERSION_KEY = "tivi-playlist-refresh-version";
 
 function mergeBackupUrls(channels: Channel[]): Channel[] {
