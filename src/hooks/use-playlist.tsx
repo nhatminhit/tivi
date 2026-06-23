@@ -23,8 +23,22 @@ import { toast } from "sonner";
 
 // Backup URLs — tự failover khi primary link bị chết
 const CHANNEL_BACKUPS: Record<string, string[]> = {
-  vtv1hd: ["https://live.fptplay53.net/fnxhd1/vtv1hd_vhls.smil/chunklist_b5000000.m3u8"],
-  vtv1: ["https://live.fptplay53.net/fnxhd1/vtv1hd_vhls.smil/chunklist_b5000000.m3u8"],
+  vtv1: [
+    "https://vtvgolive-ssaimh.vtvdigital.vn/xsPjCsnpeUF-4Ytuw_RNvA/1781122390/manifest/vtv1/playlist_720p.m3u8",
+    "https://vtvgolive-vtv02.vtvdigital.vn/hcO5rC-cNlNrGkhSdOFtMw/1782216310/hls/vtv/live/vtv1__vtv720p-h264/index.m3u8"
+  ],
+  vtv2: [
+    "https://vtvgolive-vtv02.vtvdigital.vn/govkmZGNCKaBBZZ_orDBKg/1782216579/hls/vtv/live/vtv2__vtv720p-h264/index.m3u8"
+  ],
+  vtv3: [
+    "https://vtvgolive-vtv02.vtvdigital.vn/mawd3TULu-zctFXxbHyuSA/1782216597/hls/vtv/live/vtv3__vtv720p-h264/index.m3u8"
+  ],
+  vtv4: [
+    "https://vtvgolive-vtv02.vtvdigital.vn/80flbR5tMKrmcEwh0kfthA/1782216623/hls/vtv/live/vtv4__vtv720p-h264/index.m3u8"
+  ],
+  vtv6: [
+    "https://vtvgolive-vtv02.vtvdigital.vn/pC5pNisjz1un1ovtU8tcdQ/1782216653/hls/vtv/live/vtv6__vtv720p-h264/index.m3u8"
+  ],
 };
 
 const PLAYLIST_AUTO_REFRESH_VERSION = 3;
