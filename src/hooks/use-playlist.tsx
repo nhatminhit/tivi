@@ -24,7 +24,6 @@ import { toast } from "sonner";
 // Backup URLs — tự failover khi primary link bị chết
 const CHANNEL_BACKUPS: Record<string, string[]> = {
   vtv1: [
-    "https://vtvgolive-ssaimh.vtvdigital.vn/xsPjCsnpeUF-4Ytuw_RNvA/1781122390/manifest/vtv1/playlist_720p.m3u8",
     "https://vtvgolive-vtv02.vtvdigital.vn/hcO5rC-cNlNrGkhSdOFtMw/1782216310/hls/vtv/live/vtv1__vtv720p-h264/index.m3u8"
   ],
   vtv2: [
