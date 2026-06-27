@@ -220,7 +220,7 @@ export default function VideoPlayer({ url, name }: VideoPlayerProps) {
         </div>
       )}
 
-      <div className="absolute bottom-0 left-0 right-0 p-2 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+      <div className="absolute bottom-0 left-0 right-0 p-2 flex justify-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
         data-show={showControls || undefined}
         style={{ opacity: showControls ? 1 : undefined }}
       >
