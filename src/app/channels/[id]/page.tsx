@@ -131,52 +131,54 @@ export default function ChannelPage() {
     );
   }
 
-  // Desktop layout: player full width + hover sidebar overlay
+  // Desktop layout: flex column — player (unobstructed) + info bar below
   return (
-    <div className="-mx-4 md:-mx-6 relative" style={{ height: "calc(100dvh - 3.5rem)" }}>
-      {/* Player — full width */}
-      <div className="absolute inset-0 bg-black group/player">
-        <VideoPlayer url={channel.url} name={channel.name} />
+    <div className="-mx-4 md:-mx-6 flex" style={{ height: "calc(100dvh - 3.5rem)" }}>
+      {/* Player area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Player — unobstructed, fullscreen works */}
+        <div className="flex-1 bg-black min-h-0 relative group/player">
+          <VideoPlayer url={channel.url} name={channel.name} />
 
-        {prevChannel && (
-          <Link
-            href={`/channels/${encodeURIComponent(prevChannel.id)}`}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full glass flex items-center justify-center opacity-0 group-hover/player:opacity-100 hover:bg-white/10 transition-all"
-            title={prevChannel.name}
-          >
-            <ChevronLeft className="h-5 w-5 text-white" />
-          </Link>
-        )}
-        {nextChannel && (
-          <Link
-            href={`/channels/${encodeURIComponent(nextChannel.id)}`}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full glass flex items-center justify-center opacity-0 group-hover/player:opacity-100 hover:bg-white/10 transition-all"
-            title={nextChannel.name}
-          >
-            <ChevronRight className="h-5 w-5 text-white" />
-          </Link>
-        )}
+          {/* Nav arrows */}
+          {prevChannel && (
+            <Link
+              href={`/channels/${encodeURIComponent(prevChannel.id)}`}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full glass flex items-center justify-center opacity-0 group-hover/player:opacity-100 hover:bg-white/10 transition-all"
+              title={prevChannel.name}
+            >
+              <ChevronLeft className="h-5 w-5 text-white" />
+            </Link>
+          )}
+          {nextChannel && (
+            <Link
+              href={`/channels/${encodeURIComponent(nextChannel.id)}`}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full glass flex items-center justify-center opacity-0 group-hover/player:opacity-100 hover:bg-white/10 transition-all"
+              title={nextChannel.name}
+            >
+              <ChevronRight className="h-5 w-5 text-white" />
+            </Link>
+          )}
+        </div>
 
-        {/* Channel info — bottom overlay */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 glass border-t border-white/5 opacity-0 group-hover/player:opacity-100 transition-opacity duration-300">
-          <div className="flex items-center gap-3 px-4 py-2">
-            <div className="w-7 h-7 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/10">
-              {channel.logo ? (
-                <img src={channel.logo} alt="" className="w-full h-full object-contain"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-              ) : (
-                <Tv className="h-3.5 w-3.5 text-muted-foreground/40" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold truncate">{channel.name}</p>
-              <p className="text-[10px] text-muted-foreground truncate">{channel.group}</p>
-            </div>
-            <span className="live-badge px-2 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider">
-              Live
-            </span>
+        {/* Info bar — below player, not overlapping */}
+        <div className="flex items-center gap-3 px-4 py-2 glass border-t border-white/5 shrink-0">
+          <div className="w-7 h-7 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/10">
+            {channel.logo ? (
+              <img src={channel.logo} alt="" className="w-full h-full object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            ) : (
+              <Tv className="h-3.5 w-3.5 text-muted-foreground/40" />
+            )}
           </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold truncate">{channel.name}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{channel.group}</p>
+          </div>
+          <span className="live-badge px-2 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider">
+            Live
+          </span>
         </div>
       </div>
 
@@ -187,7 +189,7 @@ export default function ChannelPage() {
         onMouseLeave={scheduleHide}
       />
 
-      {/* Sidebar overlay — slides in */}
+      {/* Sidebar overlay — slides in from right */}
       <div
         className="absolute right-0 top-0 bottom-0 z-40 will-change-transform transition-transform duration-300 ease-in-out"
         style={{
