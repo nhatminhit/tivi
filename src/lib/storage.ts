@@ -129,8 +129,7 @@ export async function setActivePlaylistId(id: string): Promise<void> {
 }
 
 const DEFAULT_LINK_KEY = "tivi-default-link";
-const BUILTIN_DEFAULT_LINK =
-  "https://raw.githubusercontent.com/vietng228/m3u/refs/heads/main/new.m3u";
+const BUILTIN_DEFAULT_LINK = "/api/playlist";
 
 export async function getDefaultLink(): Promise<string | null> {
   if (typeof window === "undefined") return null;
