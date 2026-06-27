@@ -49,23 +49,23 @@ export default function ChannelSidebar({ channels, currentId, onSelect }: Channe
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-white/5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold flex items-center gap-2">
-            <Radio className="h-3.5 w-3.5 text-primary" />
+      <div className="p-3 border-b border-white/5">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xs font-semibold flex items-center gap-1.5">
+            <Radio className="h-3 w-3 text-primary" />
             Kênh
           </h2>
-          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+          <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
             {filtered.length}
           </span>
         </div>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
           <Input
-            placeholder="Tìm kênh..."
+            placeholder="Tìm..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 pl-9 text-sm glass rounded-lg border-white/5"
+            className="h-8 pl-8 text-xs glass rounded-lg border-white/5"
           />
         </div>
       </div>
@@ -78,11 +78,11 @@ export default function ChannelSidebar({ channels, currentId, onSelect }: Channe
             <div key={group}>
               <button
                 onClick={() => toggleGroup(group)}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:bg-white/[0.03] transition-colors sticky top-0 bg-background/95 backdrop-blur z-10"
+                className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:bg-white/[0.03] transition-colors sticky top-0 bg-background/95 backdrop-blur z-10"
               >
-                {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                {isCollapsed ? <ChevronRight className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />}
                 <span className="truncate">{group}</span>
-                <span className="ml-auto text-[10px] font-normal opacity-50">{groupChannels.length}</span>
+                <span className="ml-auto text-[9px] font-normal opacity-50">{groupChannels.length}</span>
               </button>
 
               {!isCollapsed &&
@@ -94,13 +94,13 @@ export default function ChannelSidebar({ channels, currentId, onSelect }: Channe
                       href={`/channels/${encodeURIComponent(ch.id)}`}
                       data-channel-id={ch.id}
                       onClick={onSelect}
-                      className={`flex items-center gap-3 px-4 py-2.5 transition-all duration-200 ${
+                      className={`flex items-center gap-2.5 px-3 py-2 transition-all duration-200 ${
                         isActive
                           ? "bg-primary/10 text-foreground border-l-2 border-primary"
                           : "text-muted-foreground border-l-2 border-transparent hover:bg-white/[0.03] hover:text-foreground hover:border-primary/30"
                       }`}
                     >
-                      <div className="w-8 h-8 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/5">
+                      <div className="w-6 h-6 rounded overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/5">
                         {ch.logo ? (
                           <img
                             src={ch.logo}
@@ -111,10 +111,10 @@ export default function ChannelSidebar({ channels, currentId, onSelect }: Channe
                             }}
                           />
                         ) : (
-                          <Tv className="h-3.5 w-3.5 text-muted-foreground/40" />
+                          <Tv className="h-3 w-3 text-muted-foreground/40" />
                         )}
                       </div>
-                      <span className={`text-sm truncate ${isActive ? "font-medium" : ""}`}>
+                      <span className={`text-xs truncate ${isActive ? "font-medium" : ""}`}>
                         {ch.name}
                       </span>
                       {isActive && (
@@ -129,8 +129,8 @@ export default function ChannelSidebar({ channels, currentId, onSelect }: Channe
 
         {grouped.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 px-4">
-            <Search className="h-6 w-6 text-muted-foreground/30 mb-2" />
-            <p className="text-sm text-muted-foreground text-center">Không tìm thấy kênh</p>
+            <Search className="h-5 w-5 text-muted-foreground/30 mb-2" />
+            <p className="text-xs text-muted-foreground text-center">Không tìm thấy kênh</p>
           </div>
         )}
       </div>

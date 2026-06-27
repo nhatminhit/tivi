@@ -10,7 +10,7 @@ import { Plus, Tv, X } from "lucide-react";
 function ChannelsContent() {
   const searchParams = useSearchParams();
   const group = searchParams.get("group");
-  const { channels, meta } = usePlaylist();
+  const { channels } = usePlaylist();
 
   if (channels.length === 0) {
     return (
@@ -21,23 +21,17 @@ function ChannelsContent() {
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Chưa có danh sách kênh</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Thêm playlist M3U để bắt đầu xem truyền hình
+            Đang tải playlist mặc định...
           </p>
         </div>
-        <Button asChild className="glass rounded-xl px-6">
-          <Link href="/">
-            <Plus className="h-4 w-4 mr-2" />
-            Thêm playlist
-          </Link>
-        </Button>
       </div>
     );
   }
 
   return (
-    <div className="pt-6 space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+    <div className="pt-4 space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-xl md:text-2xl font-bold tracking-tight">
           {group || "Tất cả kênh"}
         </h1>
         <div className="flex items-center gap-3 flex-wrap">

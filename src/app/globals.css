@@ -4,27 +4,27 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.12 0.02 250);
+  --background: oklch(0.08 0.02 250);
   --foreground: oklch(0.95 0.01 250);
-  --card: oklch(0.15 0.02 250);
+  --card: oklch(0.12 0.02 250);
   --card-foreground: oklch(0.95 0.01 250);
-  --popover: oklch(0.15 0.02 250);
+  --popover: oklch(0.12 0.02 250);
   --popover-foreground: oklch(0.95 0.01 250);
-  --primary: oklch(0.58 0.2 260);
+  --primary: oklch(0.62 0.22 260);
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.18 0.02 250);
+  --secondary: oklch(0.14 0.02 250);
   --secondary-foreground: oklch(0.9 0.01 250);
-  --muted: oklch(0.18 0.02 250);
+  --muted: oklch(0.14 0.02 250);
   --muted-foreground: oklch(0.55 0.02 250);
-  --accent: oklch(0.55 0.15 200);
+  --accent: oklch(0.58 0.18 200);
   --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.58 0.24 27);
+  --destructive: oklch(0.62 0.26 27);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.22 0.02 250);
-  --input: oklch(0.20 0.02 250);
-  --ring: oklch(0.58 0.2 260);
-  --radius: 0.875rem;
-  --glow: 0 0 20px oklch(0.58 0.2 260 / 0.15);
+  --border: oklch(0.2 0.02 250);
+  --input: oklch(0.18 0.02 250);
+  --ring: oklch(0.62 0.22 260);
+  --radius: 0.75rem;
+  --glow: 0 0 20px oklch(0.62 0.22 260 / 0.2);
 }
 
 @theme inline {
@@ -64,35 +64,35 @@
 /* Glassmorphism utilities */
 @layer utilities {
   .glass {
-    background: oklch(0.15 0.02 250 / 0.8);
+    background: oklch(0.1 0.02 250 / 0.85);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid oklch(1 0 0 / 0.06);
   }
   .glass-light {
-    background: oklch(0.15 0.02 250 / 0.6);
+    background: oklch(0.12 0.02 250 / 0.7);
     backdrop-filter: blur(12px) saturate(150%);
     -webkit-backdrop-filter: blur(12px) saturate(150%);
     border: 1px solid oklch(1 0 0 / 0.08);
   }
   .glass-card {
-    background: oklch(0.15 0.02 250 / 0.7);
+    background: oklch(0.12 0.02 250 / 0.75);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     border: 1px solid oklch(1 0 0 / 0.05);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .glass-card:hover {
-    background: oklch(0.18 0.02 250 / 0.85);
-    border-color: oklch(1 0 0 / 0.1);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px oklch(0 0 0 / 0.3);
+    background: oklch(0.16 0.03 250 / 0.9);
+    border-color: oklch(1 0 0 / 0.12);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 40px oklch(0 0 0 / 0.4), 0 0 0 1px oklch(0.62 0.22 260 / 0.1);
   }
   .text-glow {
-    text-shadow: 0 0 20px oklch(0.58 0.2 260 / 0.5);
+    text-shadow: 0 0 20px oklch(0.62 0.22 260 / 0.5);
   }
   .live-badge {
-    background: linear-gradient(135deg, oklch(0.62 0.25 25), oklch(0.55 0.25 15));
+    background: linear-gradient(135deg, oklch(0.65 0.26 25), oklch(0.58 0.26 15));
     animation: pulse-live 2s ease-in-out infinite;
   }
   .gradient-border {
@@ -105,13 +105,19 @@
     position: absolute;
     inset: -1px;
     border-radius: inherit;
-    background: linear-gradient(135deg, oklch(0.58 0.2 260 / 0.4), oklch(0.55 0.15 200 / 0.2), transparent);
+    background: linear-gradient(135deg, oklch(0.62 0.22 260 / 0.4), oklch(0.58 0.18 200 / 0.2), transparent);
     z-index: -1;
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: exclude;
     -webkit-mask-composite: xor;
     padding: 1px;
     border-radius: inherit;
+  }
+  .hover-glow {
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .hover-glow:hover {
+    box-shadow: 0 0 30px oklch(0.62 0.22 260 / 0.15), 0 8px 32px oklch(0 0 0 / 0.3);
   }
 }
 
@@ -125,8 +131,18 @@
   100% { background-position: 200% 0; }
 }
 
+@keyframes slide-in-right {
+  0% { transform: translateX(100%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fade-up {
+  0% { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
 .skeleton {
-  background: linear-gradient(90deg, oklch(0.18 0.02 250) 25%, oklch(0.22 0.02 250) 50%, oklch(0.18 0.02 250) 75%);
+  background: linear-gradient(90deg, oklch(0.14 0.02 250) 25%, oklch(0.18 0.02 250) 50%, oklch(0.14 0.02 250) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }

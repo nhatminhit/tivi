@@ -1,6 +1,6 @@
 "use client";
-import { useMemo, useState, useEffect } from "react";
-import { Search, Grid3X3, List, ChevronDown, ChevronRight, Tv } from "lucide-react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { Search, List, Grid3X3, ChevronRight, Tv } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ChannelCard from "@/components/channel-card";
@@ -15,7 +15,6 @@ export default function ChannelGrid({ initialGroup }: ChannelGridProps) {
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState(initialGroup || "");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setGroupFilter(initialGroup || "");
@@ -50,7 +49,6 @@ export default function ChannelGrid({ initialGroup }: ChannelGridProps) {
     });
   }, [filtered]);
 
-  // All unique groups for the filter pills
   const allGroups = useMemo(() => {
     const set = new Set(channels.map((ch) => ch.group).filter(Boolean));
     return Array.from(set).sort();
@@ -58,13 +56,13 @@ export default function ChannelGrid({ initialGroup }: ChannelGridProps) {
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {[1, 2, 3].map((i) => (
           <div key={i} className="space-y-3">
-            <div className="skeleton h-6 w-32 rounded-lg" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {[1, 2, 3, 4].map((j) => (
-                <div key={j} className="skeleton aspect-video rounded-2xl" />
+            <div className="skeleton h-5 w-28 rounded-lg" />
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+              {[1, 2, 3, 4, 5, 6].map((j) => (
+                <div key={j} className="skeleton aspect-video rounded-xl" />
               ))}
             </div>
           </div>
@@ -101,19 +99,19 @@ export default function ChannelGrid({ initialGroup }: ChannelGridProps) {
       {/* Search + view toggle */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Tìm kênh theo tên..."
+            placeholder="Tìm kênh..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-11 h-12 glass rounded-xl border-white/5 focus:border-primary/50 focus:ring-primary/25"
+            className="pl-10 h-10 glass rounded-xl border-white/5 focus:border-primary/50 focus:ring-primary/25"
           />
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-          className="h-12 w-12 glass rounded-xl hover:bg-white/5"
+          className="h-10 w-10 glass rounded-xl hover:bg-white/5"
         >
           {viewMode === "grid" ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
         </Button>
@@ -129,50 +127,38 @@ export default function ChannelGrid({ initialGroup }: ChannelGridProps) {
         </p>
       </div>
 
-      {/* Channels by group */}
-      {grouped.map(([group, groupChannels]) => {
-        const isCollapsed = collapsed.has(group);
-        return (
-          <section key={group}>
-            <button
-              onClick={() => {
-                const next = new Set(collapsed);
-                if (next.has(group)) next.delete(group);
-                else next.add(group);
-                setCollapsed(next);
-              }}
-              className="flex items-center gap-3 mb-4 group cursor-pointer"
-            >
-              {isCollapsed ? (
-                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-              )}
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-accent/10 flex items-center justify-center">
-                <Tv className="h-4 w-4 text-primary" />
-              </div>
-              <h2 className="text-lg font-semibold">{group}</h2>
-              <span className="text-xs text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full">
-                {groupChannels.length}
-              </span>
-            </button>
+      {/* Channels by group — Netflix horizontal rows */}
+      {grouped.map(([group, groupChannels]) => (
+        <section key={group} className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-6 rounded bg-primary/15 flex items-center justify-center">
+              <Tv className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <h2 className="text-base font-semibold">{group}</h2>
+            <span className="text-xs text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full">
+              {groupChannels.length}
+            </span>
+          </div>
 
-            {!isCollapsed && (
-              <div
-                className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
-                    : "space-y-2"
-                }
-              >
+          {viewMode === "list" ? (
+            <div className="space-y-1">
+              {groupChannels.map((ch) => (
+                <ChannelCard key={ch.id} channel={ch} listMode />
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2">
+              <div className="flex gap-3" style={{ minWidth: "min-content" }}>
                 {groupChannels.map((ch) => (
-                  <ChannelCard key={ch.id} channel={ch} listMode={viewMode === "list"} />
+                  <div key={ch.id} className="w-[140px] sm:w-[160px] md:w-[180px] flex-shrink-0">
+                    <ChannelCard channel={ch} />
+                  </div>
                 ))}
               </div>
-            )}
-          </section>
-        );
-      })}
+            </div>
+          )}
+        </section>
+      ))}
 
       {grouped.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20">

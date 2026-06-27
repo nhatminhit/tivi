@@ -6,7 +6,7 @@ import { usePlaylist } from "@/hooks/use-playlist";
 import VideoPlayer from "@/components/video-player";
 import ChannelSidebar from "@/components/channel-sidebar";
 import { Button } from "@/components/ui/button";
-import { Tv, PanelLeftClose, ChevronLeft, ChevronRight } from "lucide-react";
+import { Tv, ChevronLeft, ChevronRight, List } from "lucide-react";
 
 export default function ChannelPage() {
   const params = useParams();
@@ -14,8 +14,6 @@ export default function ChannelPage() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileListOpen, setMobileListOpen] = useState(false);
-  const hoverZoneRef = useRef<HTMLDivElement>(null);
-  const sidebarRef = useRef<HTMLDivElement>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
@@ -31,7 +29,6 @@ export default function ChannelPage() {
     return channels.find((ch) => ch.id === id) || null;
   }, [channels, params.id]);
 
-  // Find prev/next channel
   const channelIndex = useMemo(() => {
     if (!channel) return -1;
     return channels.findIndex((ch) => ch.id === channel.id);
@@ -40,13 +37,17 @@ export default function ChannelPage() {
   const prevChannel = channelIndex > 0 ? channels[channelIndex - 1] : null;
   const nextChannel = channelIndex >= 0 && channelIndex < channels.length - 1 ? channels[channelIndex + 1] : null;
 
-  const startHideTimer = useCallback(() => {
-    clearTimeout(hideTimerRef.current);
-    hideTimerRef.current = setTimeout(() => setShowSidebar(false), 300);
-  }, []);
-
   const cancelHide = useCallback(() => {
     clearTimeout(hideTimerRef.current);
+  }, []);
+
+  const scheduleHide = useCallback(() => {
+    clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setShowSidebar(false), 400);
+  }, []);
+
+  useEffect(() => {
+    return () => clearTimeout(hideTimerRef.current);
   }, []);
 
   if (!channel && !loading) {
@@ -79,44 +80,42 @@ export default function ChannelPage() {
     );
   }
 
-  // Mobile layout: player top, channel list bottom
+  // Mobile layout
   if (isMobile) {
     return (
-      <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
-        {/* Player */}
+      <div className="flex flex-col h-[calc(100dvh-3.5rem)] overflow-hidden">
         <div
-          className={`bg-black shrink-0 ${mobileListOpen ? "h-[40dvh]" : "h-[calc(100dvh-4rem-3.5rem)]"}`}
+          className={`bg-black shrink-0 ${mobileListOpen ? "h-[40dvh]" : "flex-1"}`}
           style={{ transition: "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
         >
           <VideoPlayer url={channel.url} name={channel.name} />
         </div>
 
-        {/* Channel info bar */}
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 glass border-t border-white/5 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/10">
+        <div className="flex items-center justify-between gap-3 px-3 py-2 glass border-t border-white/5 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/10">
               {channel.logo ? (
                 <img src={channel.logo} alt="" className="w-full h-full object-contain"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                 />
               ) : (
-                <Tv className="h-4 w-4 text-muted-foreground/40" />
+                <Tv className="h-3.5 w-3.5 text-muted-foreground/40" />
               )}
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-semibold truncate">{channel.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{channel.group}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{channel.group}</p>
             </div>
           </div>
           <button
             onClick={() => setMobileListOpen((v) => !v)}
-            className="text-xs text-primary font-medium hover:text-primary/80 transition-colors"
+            className="flex items-center gap-1 text-xs text-primary font-medium hover:text-primary/80 transition-colors"
           >
-            {mobileListOpen ? "Thu gọn" : "Danh sách kênh"}
+            <List className="h-3.5 w-3.5" />
+            {mobileListOpen ? "Thu gọn" : "Kênh"}
           </button>
         </div>
 
-        {/* Channel list (bottom panel) */}
         <div
           className="flex-1 min-h-0 overflow-hidden"
           style={{
@@ -132,88 +131,75 @@ export default function ChannelPage() {
     );
   }
 
-  // Desktop layout: player + sidebar
+  // Desktop layout: player full width + hover sidebar overlay
   return (
-    <div className="relative -mx-4 md:-mx-6" style={{ height: "calc(100dvh - 4rem)" }}>
-      <div className="absolute inset-0 flex">
-        {/* Main content area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Player */}
-          <div className="flex-1 bg-black min-h-0 relative">
-            <VideoPlayer url={channel.url} name={channel.name} />
+    <div className="-mx-4 md:-mx-6 relative" style={{ height: "calc(100dvh - 3.5rem)" }}>
+      {/* Player — full width */}
+      <div className="absolute inset-0 bg-black group/player">
+        <VideoPlayer url={channel.url} name={channel.name} />
 
-            {/* Navigation arrows */}
-            {prevChannel && (
-              <Link
-                href={`/channels/${encodeURIComponent(prevChannel.id)}`}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full glass flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white/10 transition-all"
-                title={prevChannel.name}
-              >
-                <ChevronLeft className="h-5 w-5 text-white" />
-              </Link>
-            )}
-            {nextChannel && (
-              <Link
-                href={`/channels/${encodeURIComponent(nextChannel.id)}`}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full glass flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white/10 transition-all"
-                title={nextChannel.name}
-              >
-                <ChevronRight className="h-5 w-5 text-white" />
-              </Link>
-            )}
-          </div>
+        {prevChannel && (
+          <Link
+            href={`/channels/${encodeURIComponent(prevChannel.id)}`}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full glass flex items-center justify-center opacity-0 group-hover/player:opacity-100 hover:bg-white/10 transition-all"
+            title={prevChannel.name}
+          >
+            <ChevronLeft className="h-5 w-5 text-white" />
+          </Link>
+        )}
+        {nextChannel && (
+          <Link
+            href={`/channels/${encodeURIComponent(nextChannel.id)}`}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full glass flex items-center justify-center opacity-0 group-hover/player:opacity-100 hover:bg-white/10 transition-all"
+            title={nextChannel.name}
+          >
+            <ChevronRight className="h-5 w-5 text-white" />
+          </Link>
+        )}
 
-          {/* Channel info bar */}
-          <div className="flex items-center gap-4 px-6 py-3 glass border-t border-white/5">
-            <div className="w-8 h-8 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/10">
+        {/* Channel info — bottom overlay */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 glass border-t border-white/5 opacity-0 group-hover/player:opacity-100 transition-opacity duration-300">
+          <div className="flex items-center gap-3 px-4 py-2">
+            <div className="w-7 h-7 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/10">
               {channel.logo ? (
                 <img src={channel.logo} alt="" className="w-full h-full object-contain"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                 />
               ) : (
-                <Tv className="h-4 w-4 text-muted-foreground/40" />
+                <Tv className="h-3.5 w-3.5 text-muted-foreground/40" />
               )}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold truncate">{channel.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{channel.group}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{channel.group}</p>
             </div>
-            <span className="live-badge px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white uppercase tracking-wider">
+            <span className="live-badge px-2 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider">
               Live
             </span>
           </div>
         </div>
+      </div>
 
-        {/* Hover zone — right edge trigger */}
-        <div
-          ref={hoverZoneRef}
-          className="absolute right-0 top-0 bottom-0 w-4 z-30"
-          onMouseEnter={() => { cancelHide(); setShowSidebar(true); }}
-        />
+      {/* Hover zone — right edge trigger */}
+      <div
+        className="absolute right-0 top-0 bottom-0 w-4 z-30"
+        onMouseEnter={() => { cancelHide(); setShowSidebar(true); }}
+        onMouseLeave={scheduleHide}
+      />
 
-        {/* Sidebar overlay */}
-        <div
-          ref={sidebarRef}
-          onMouseEnter={cancelHide}
-          onMouseLeave={startHideTimer}
-          className={`absolute right-0 top-0 bottom-0 z-40 glass border-l border-white/5 shadow-2xl transition-all duration-300 ${
-            showSidebar ? "translate-x-0" : "translate-x-full"
-          }`}
-          style={{ width: "min(22rem, 80vw)" }}
-        >
+      {/* Sidebar overlay — slides in */}
+      <div
+        className="absolute right-0 top-0 bottom-0 z-40 will-change-transform transition-transform duration-300 ease-in-out"
+        style={{
+          width: "min(18rem, 70vw)",
+          transform: showSidebar ? "translateX(0)" : "translateX(100%)",
+        }}
+        onMouseEnter={cancelHide}
+        onMouseLeave={scheduleHide}
+      >
+        <div className="h-full glass border-l border-white/5 shadow-2xl">
           <ChannelSidebar channels={channels} currentId={channel.id} onSelect={() => setShowSidebar(false)} />
         </div>
-
-        {/* Close button */}
-        {showSidebar && (
-          <button
-            onClick={() => setShowSidebar(false)}
-            onMouseEnter={cancelHide}
-            className="absolute right-[min(22rem,80vw)] top-2 z-50 h-8 w-8 rounded-l-lg glass border border-r-0 border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
-          >
-            <PanelLeftClose className="h-4 w-4 text-muted-foreground" />
-          </button>
-        )}
       </div>
     </div>
   );
