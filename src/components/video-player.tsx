@@ -7,10 +7,9 @@ import { Slider } from "@/components/ui/slider";
 interface VideoPlayerProps {
   url: string;
   name: string;
-  backupUrls?: string[];
 }
 
-export default function VideoPlayer({ url, name, backupUrls }: VideoPlayerProps) {
+export default function VideoPlayer({ url, name }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,63 +28,12 @@ export default function VideoPlayer({ url, name, backupUrls }: VideoPlayerProps)
     const ios = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(ios);
   }, []);
-  const backupIndexRef = useRef(0);
-  const allUrls = [url, ...(backupUrls || [])];
-
-  const tryNextBackup = useCallback(() => {
-    const nextIdx = backupIndexRef.current + 1;
-    if (nextIdx >= allUrls.length) return false;
-    backupIndexRef.current = nextIdx;
-    const nextUrl = allUrls[nextIdx];
-    const video = videoRef.current;
-    if (!video) return false;
-
-    setLoading(true);
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-
-    if (nextUrl.includes(".m3u8")) {
-      video.crossOrigin = "anonymous";
-      const hls = new Hls({
-        lowLatencyMode: false,
-        backBufferLength: 30,
-        maxBufferLength: 30,
-        startLevel: -1,
-        liveDurationInfinity: true,
-        liveSyncDurationCount: 3,
-      });
-      hlsRef.current = hls;
-      hls.loadSource(nextUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (mountedRef.current) setLoading(false);
-      });
-      hls.on(Hls.Events.LEVEL_LOADED, () => {
-        if (mountedRef.current) setLoading(false);
-      });
-      hls.on(Hls.Events.ERROR, (_e, data) => {
-        if (!data.fatal) return;
-        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
-        else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
-      });
-    } else {
-      video.src = nextUrl;
-      video.onloadedmetadata = () => {
-        if (mountedRef.current) setLoading(false);
-      };
-    }
-    return true;
-  }, [allUrls]);
-
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     mountedRef.current = true;
     setLoading(true);
     setUserInteracted(false);
-    backupIndexRef.current = 0;
 
     const loadingTimeout = setTimeout(() => {
       if (mountedRef.current) setLoading(false);
@@ -111,14 +59,8 @@ export default function VideoPlayer({ url, name, backupUrls }: VideoPlayerProps)
       hls.on(Hls.Events.LEVEL_LOADED, () => {
         if (mountedRef.current) setLoading(false);
       });
-      let fatalErrors = 0;
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (!data.fatal) return;
-        fatalErrors++;
-        if (fatalErrors > 1) {
-          tryNextBackup();
-          return;
-        }
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
         else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
       });

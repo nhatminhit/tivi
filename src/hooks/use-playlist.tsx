@@ -14,46 +14,12 @@ import {
   loadPlaylistMeta,
   listPlaylists,
   deletePlaylist,
-  getActivePlaylistId,
   setActivePlaylistId,
   getDefaultLink,
 } from "@/lib/storage";
 import { generatePlaylistId, parseM3U } from "@/lib/m3u-parser";
 import { toast } from "sonner";
 
-// Backup URLs — tự failover khi primary link bị chết
-const CHANNEL_BACKUPS: Record<string, string[]> = {
-  vtv1: [
-    "https://vtvgolive-vtv02.vtvdigital.vn/hcO5rC-cNlNrGkhSdOFtMw/1782216310/hls/vtv/live/vtv1__vtv720p-h264/index.m3u8"
-  ],
-  vtv2: [
-    "https://vtvgolive-vtv02.vtvdigital.vn/govkmZGNCKaBBZZ_orDBKg/1782216579/hls/vtv/live/vtv2__vtv720p-h264/index.m3u8"
-  ],
-  vtv3: [
-    "https://vtvgolive-vtv02.vtvdigital.vn/mawd3TULu-zctFXxbHyuSA/1782216597/hls/vtv/live/vtv3__vtv720p-h264/index.m3u8"
-  ],
-  vtv4: [
-    "https://vtvgolive-vtv02.vtvdigital.vn/80flbR5tMKrmcEwh0kfthA/1782216623/hls/vtv/live/vtv4__vtv720p-h264/index.m3u8"
-  ],
-  vtv6: [
-    "https://vtvgolive-vtv02.vtvdigital.vn/pC5pNisjz1un1ovtU8tcdQ/1782216653/hls/vtv/live/vtv6__vtv720p-h264/index.m3u8"
-  ],
-};
-
-const PLAYLIST_AUTO_REFRESH_VERSION = 3;
-const REFRESH_VERSION_KEY = "tivi-playlist-refresh-version";
-
-function mergeBackupUrls(channels: Channel[]): Channel[] {
-  return channels.map((ch) => {
-    const backups = CHANNEL_BACKUPS[ch.id] || CHANNEL_BACKUPS[ch.name.trim().toLowerCase()];
-    if (backups && backups.length > 0) {
-      const existing = ch.backupUrls || [];
-      const merged = [...new Set([...existing, ...backups])];
-      return { ...ch, backupUrls: merged };
-    }
-    return ch;
-  });
-}
 
 interface PlaylistContextType {
   channels: Channel[];
@@ -101,7 +67,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
       ]);
       if (m) {
         setMeta(m);
-        setChannels(mergeBackupUrls(chs));
+        setChannels(chs);
         setFirstChannelId(resolveDefaultChannel(chs));
         await setActivePlaylistId(id);
         return chs.length; // return count để caller kiểm tra
@@ -164,47 +130,14 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     [saveAndActivate]
   );
 
-  // Init: load active playlist — tự refresh khi version thay đổi
+  // Init: mỗi lần mở app → fetch fresh từ GitHub
   useEffect(() => {
     (async () => {
       await refreshPlaylistList();
-
-      // Check auto-refresh version
-      let needRefresh = false;
-      try {
-        const stored = localStorage.getItem(REFRESH_VERSION_KEY);
-        if (stored !== String(PLAYLIST_AUTO_REFRESH_VERSION)) {
-          needRefresh = true;
-        }
-      } catch { /* private browsing */ }
-
-      if (needRefresh) {
-        try {
-          const defaultLink = await getDefaultLink();
-          if (defaultLink) {
-            await fetchAndSaveFromUrl(defaultLink);
-            localStorage.setItem(REFRESH_VERSION_KEY, String(PLAYLIST_AUTO_REFRESH_VERSION));
-          }
-        } catch { /* noop */ }
-        return;
-      }
-
-      const activeId = await getActivePlaylistId();
-      if (activeId) {
-        const existingMeta = await loadPlaylistMeta(activeId);
-        if (existingMeta) {
-          const count = await loadPlaylist(activeId);
-          if (count > 0) return;
-        }
-      }
-
-      // Chưa có cache → fetch từ default link
       try {
         const defaultLink = await getDefaultLink();
         if (defaultLink) {
-          toast.info("Đang tải danh sách kênh...");
           await fetchAndSaveFromUrl(defaultLink);
-          toast.success("Đã tải danh sách kênh");
         } else {
           setLoading(false);
         }
@@ -213,7 +146,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     })();
-  }, [loadPlaylist, refreshPlaylistList, fetchAndSaveFromUrl]);
+  }, [refreshPlaylistList, fetchAndSaveFromUrl]);
 
   return (
     <PlaylistContext.Provider
