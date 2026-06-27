@@ -6,7 +6,7 @@ import { usePlaylist } from "@/hooks/use-playlist";
 import VideoPlayer from "@/components/video-player";
 import ChannelSidebar from "@/components/channel-sidebar";
 import { Button } from "@/components/ui/button";
-import { Tv, ChevronLeft, ChevronRight, List } from "lucide-react";
+import { Tv, List } from "lucide-react";
 
 export default function ChannelPage() {
   const params = useParams();
@@ -28,14 +28,6 @@ export default function ChannelPage() {
     const id = decodeURIComponent(params.id as string);
     return channels.find((ch) => ch.id === id) || null;
   }, [channels, params.id]);
-
-  const channelIndex = useMemo(() => {
-    if (!channel) return -1;
-    return channels.findIndex((ch) => ch.id === channel.id);
-  }, [channel, channels]);
-
-  const prevChannel = channelIndex > 0 ? channels[channelIndex - 1] : null;
-  const nextChannel = channelIndex >= 0 && channelIndex < channels.length - 1 ? channels[channelIndex + 1] : null;
 
   const cancelHide = useCallback(() => {
     clearTimeout(hideTimerRef.current);
@@ -137,28 +129,8 @@ export default function ChannelPage() {
       {/* Player area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Player — unobstructed, fullscreen works */}
-        <div className="flex-1 bg-black min-h-0 relative group/player">
+        <div className="flex-1 bg-black min-h-0">
           <VideoPlayer url={channel.url} name={channel.name} />
-
-          {/* Nav arrows */}
-          {prevChannel && (
-            <Link
-              href={`/channels/${encodeURIComponent(prevChannel.id)}`}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full glass flex items-center justify-center opacity-0 group-hover/player:opacity-100 hover:bg-white/10 transition-all"
-              title={prevChannel.name}
-            >
-              <ChevronLeft className="h-5 w-5 text-white" />
-            </Link>
-          )}
-          {nextChannel && (
-            <Link
-              href={`/channels/${encodeURIComponent(nextChannel.id)}`}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full glass flex items-center justify-center opacity-0 group-hover/player:opacity-100 hover:bg-white/10 transition-all"
-              title={nextChannel.name}
-            >
-              <ChevronRight className="h-5 w-5 text-white" />
-            </Link>
-          )}
         </div>
 
         {/* Info bar — below player, not overlapping */}
