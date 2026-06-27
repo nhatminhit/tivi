@@ -1,15 +1,23 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import Hls from "hls.js";
-import { Play, Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
-import { Slider } from "@/components/ui/slider";
+import { Play } from "lucide-react";
 
 interface VideoPlayerProps {
   url: string;
   name: string;
 }
 
-export default function VideoPlayer({ url, name }: VideoPlayerProps) {
+export interface VideoPlayerControls {
+  toggleFullscreen: () => void;
+  toggleMute: () => void;
+  handleVolumeChange: (value: number[]) => void;
+  muted: boolean;
+  volume: number;
+  fullscreen: boolean;
+}
+
+const VideoPlayer = forwardRef<VideoPlayerControls, VideoPlayerProps>(({ url, name }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -20,14 +28,9 @@ export default function VideoPlayer({ url, name }: VideoPlayerProps) {
   const [volume, setVolume] = useState(1);
   const [userInteracted, setUserInteracted] = useState(false);
   const [showControls, setShowControls] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
 
-  useEffect(() => {
-    const ios = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(ios);
-  }, []);
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -135,6 +138,19 @@ export default function VideoPlayer({ url, name }: VideoPlayerProps) {
     }
   }, []);
 
+  const toggleMute = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (muted) {
+      v.muted = false;
+      setMuted(false);
+      v.volume = volume || 1;
+    } else {
+      v.muted = true;
+      setMuted(true);
+    }
+  }, [muted, volume]);
+
   const toggleFullscreen = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -142,7 +158,6 @@ export default function VideoPlayer({ url, name }: VideoPlayerProps) {
       document.exitFullscreen();
       return;
     }
-    // iOS Safari — dùng webkitEnterFullscreen trên video element
     if ((v as any).webkitEnterFullscreen) {
       (v as any).webkitEnterFullscreen();
     } else {
@@ -155,6 +170,15 @@ export default function VideoPlayer({ url, name }: VideoPlayerProps) {
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
   }, []);
+
+  useImperativeHandle(ref, () => ({
+    toggleFullscreen,
+    toggleMute,
+    handleVolumeChange,
+    muted,
+    volume,
+    fullscreen,
+  }), [toggleFullscreen, toggleMute, handleVolumeChange, muted, volume, fullscreen]);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -171,11 +195,11 @@ export default function VideoPlayer({ url, name }: VideoPlayerProps) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === " " || e.key === "k") { e.preventDefault(); togglePlay(); }
       if (e.key === "f") { e.preventDefault(); toggleFullscreen(); }
-      if (e.key === "m" && videoRef.current) videoRef.current.muted = !videoRef.current.muted;
+      if (e.key === "m") { e.preventDefault(); toggleMute(); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [togglePlay, toggleFullscreen]);
+  }, [togglePlay, toggleFullscreen, toggleMute]);
 
   return (
     <div
@@ -215,55 +239,13 @@ export default function VideoPlayer({ url, name }: VideoPlayerProps) {
       {paused && userInteracted && !loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity pointer-events-none">
           <div className="h-14 w-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-            <Play className="h-6 w-6 text-white ml-1" fill="white" />
+            <Play className="h-6 w-6 text-white ml-1" />
           </div>
         </div>
       )}
-
-      <div className="absolute bottom-0 left-0 right-0 p-2 flex justify-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-        data-show={showControls || undefined}
-        style={{ opacity: showControls ? 1 : undefined }}
-      >
-        {userInteracted && !isIOS && (
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const v = videoRef.current;
-                if (!v) return;
-                if (muted) {
-                  v.muted = false;
-                  setMuted(false);
-                  v.volume = volume || 1;
-                } else {
-                  v.muted = true;
-                  setMuted(true);
-                }
-              }}
-              className="h-8 w-8 rounded bg-black/50 hover:bg-black/70 flex items-center justify-center text-white transition-colors flex-shrink-0"
-              title={muted ? "Bật âm thanh" : "Tắt âm thanh"}
-            >
-              {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </button>
-            <div className="w-20">
-              <Slider
-                value={[muted ? 0 : volume]}
-                min={0}
-                max={1}
-                step={0.05}
-                onValueChange={handleVolumeChange}
-              />
-            </div>
-          </div>
-        )}
-        <button
-          onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-          className="h-8 w-8 rounded bg-black/50 hover:bg-black/70 flex items-center justify-center text-white transition-colors"
-          title={fullscreen ? "Thoát fullscreen (F)" : "Fullscreen (F)"}
-        >
-          {fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-        </button>
-      </div>
     </div>
   );
-}
+});
+
+VideoPlayer.displayName = "VideoPlayer";
+export default VideoPlayer;
