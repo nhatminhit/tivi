@@ -1,23 +1,15 @@
 "use client";
-import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Hls from "hls.js";
-import { Play } from "lucide-react";
+import { Play, Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 interface VideoPlayerProps {
   url: string;
   name: string;
 }
 
-export interface VideoPlayerControls {
-  toggleFullscreen: () => void;
-  toggleMute: () => void;
-  handleVolumeChange: (value: number[]) => void;
-  muted: boolean;
-  volume: number;
-  fullscreen: boolean;
-}
-
-const VideoPlayer = forwardRef<VideoPlayerControls, VideoPlayerProps>(({ url, name }, ref) => {
+export default function VideoPlayer({ url, name }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,8 +20,14 @@ const VideoPlayer = forwardRef<VideoPlayerControls, VideoPlayerProps>(({ url, na
   const [volume, setVolume] = useState(1);
   const [userInteracted, setUserInteracted] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
+
+  useEffect(() => {
+    const ios = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(ios);
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -44,7 +42,6 @@ const VideoPlayer = forwardRef<VideoPlayerControls, VideoPlayerProps>(({ url, na
 
     if (url.includes(".m3u8")) {
       video.crossOrigin = "anonymous";
-
       const hls = new Hls({
         lowLatencyMode: false,
         backBufferLength: 30,
@@ -171,15 +168,6 @@ const VideoPlayer = forwardRef<VideoPlayerControls, VideoPlayerProps>(({ url, na
     controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
   }, []);
 
-  useImperativeHandle(ref, () => ({
-    toggleFullscreen,
-    toggleMute,
-    handleVolumeChange,
-    muted,
-    volume,
-    fullscreen,
-  }), [toggleFullscreen, toggleMute, handleVolumeChange, muted, volume, fullscreen]);
-
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -243,9 +231,41 @@ const VideoPlayer = forwardRef<VideoPlayerControls, VideoPlayerProps>(({ url, na
           </div>
         </div>
       )}
+
+      {/* Controls — bottom left corner, doesn't conflict with right hover zone */}
+      <div
+        className="absolute bottom-0 left-0 p-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-[5]"
+        data-show={showControls || undefined}
+        style={{ opacity: showControls ? 1 : undefined }}
+      >
+        {userInteracted && !isIOS && (
+          <div className="flex items-center gap-1.5 bg-black/50 rounded-lg px-2 py-1" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+              className="h-7 w-7 rounded flex items-center justify-center text-white hover:bg-white/10 transition-colors flex-shrink-0"
+              title={muted ? "Bật âm thanh" : "Tắt âm thanh"}
+            >
+              {muted || volume === 0 ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+            </button>
+            <div className="w-16">
+              <Slider
+                value={[muted ? 0 : volume]}
+                min={0}
+                max={1}
+                step={0.05}
+                onValueChange={handleVolumeChange}
+              />
+            </div>
+          </div>
+        )}
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+          className="h-7 w-7 rounded bg-black/50 flex items-center justify-center text-white hover:bg-white/10 transition-colors flex-shrink-0"
+          title={fullscreen ? "Thoát fullscreen (F)" : "Fullscreen (F)"}
+        >
+          {fullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
+        </button>
+      </div>
     </div>
   );
-});
-
-VideoPlayer.displayName = "VideoPlayer";
-export default VideoPlayer;
+}

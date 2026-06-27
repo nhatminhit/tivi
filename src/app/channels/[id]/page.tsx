@@ -3,11 +3,10 @@ import { useParams } from "next/navigation";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { usePlaylist } from "@/hooks/use-playlist";
-import VideoPlayer, { type VideoPlayerControls } from "@/components/video-player";
+import VideoPlayer from "@/components/video-player";
 import ChannelSidebar from "@/components/channel-sidebar";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Tv, List, Volume2, VolumeX, Maximize, Minimize } from "lucide-react";
+import { Tv, List } from "lucide-react";
 
 export default function ChannelPage() {
   const params = useParams();
@@ -16,8 +15,6 @@ export default function ChannelPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileListOpen, setMobileListOpen] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const playerRef = useRef<VideoPlayerControls>(null);
-  const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -43,12 +40,6 @@ export default function ChannelPage() {
 
   useEffect(() => {
     return () => clearTimeout(hideTimerRef.current);
-  }, []);
-
-  // Re-render when player controls change
-  useEffect(() => {
-    const iv = setInterval(() => forceUpdate((n) => n + 1), 500);
-    return () => clearInterval(iv);
   }, []);
 
   if (!channel && !loading) {
@@ -81,70 +72,6 @@ export default function ChannelPage() {
     );
   }
 
-  const pc = playerRef.current;
-
-  // Info bar with controls — shared between mobile and desktop
-  const infoBar = (
-    <div className="flex items-center gap-3 px-4 py-2 glass border-t border-white/5 shrink-0">
-      <div className="w-7 h-7 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/10">
-        {channel.logo ? (
-          <img src={channel.logo} alt="" className="w-full h-full object-contain"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
-        ) : (
-          <Tv className="h-3.5 w-3.5 text-muted-foreground/40" />
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold truncate">{channel.name}</p>
-        <p className="text-[10px] text-muted-foreground truncate">{channel.group}</p>
-      </div>
-      <span className="live-badge px-2 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider">
-        Live
-      </span>
-
-      {/* Volume control */}
-      <div className="flex items-center gap-1.5">
-        <button
-          onClick={() => pc?.toggleMute()}
-          className="h-7 w-7 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-          title={pc?.muted ? "Bật âm thanh" : "Tắt âm thanh"}
-        >
-          {pc?.muted || pc?.volume === 0 ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-        </button>
-        <div className="w-16 hidden sm:block">
-          <Slider
-            value={[pc?.muted ? 0 : (pc?.volume ?? 1)]}
-            min={0}
-            max={1}
-            step={0.05}
-            onValueChange={(v) => pc?.handleVolumeChange(v)}
-          />
-        </div>
-      </div>
-
-      {/* Fullscreen */}
-      <button
-        onClick={() => pc?.toggleFullscreen()}
-        className="h-7 w-7 rounded bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-        title={pc?.fullscreen ? "Thoát fullscreen (F)" : "Fullscreen (F)"}
-      >
-        {pc?.fullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
-      </button>
-
-      {/* Mobile: channel list toggle */}
-      {isMobile && (
-        <button
-          onClick={() => setMobileListOpen((v) => !v)}
-          className="flex items-center gap-1 text-xs text-primary font-medium hover:text-primary/80 transition-colors"
-        >
-          <List className="h-3.5 w-3.5" />
-          {mobileListOpen ? "Thu gọn" : "Kênh"}
-        </button>
-      )}
-    </div>
-  );
-
   // Mobile layout
   if (isMobile) {
     return (
@@ -153,10 +80,33 @@ export default function ChannelPage() {
           className={`bg-black shrink-0 ${mobileListOpen ? "h-[40dvh]" : "flex-1"}`}
           style={{ transition: "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
         >
-          <VideoPlayer ref={playerRef} url={channel.url} name={channel.name} />
+          <VideoPlayer url={channel.url} name={channel.name} />
         </div>
 
-        {infoBar}
+        <div className="flex items-center justify-between gap-3 px-3 py-2 glass border-t border-white/5 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/10">
+              {channel.logo ? (
+                <img src={channel.logo} alt="" className="w-full h-full object-contain"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              ) : (
+                <Tv className="h-3.5 w-3.5 text-muted-foreground/40" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold truncate">{channel.name}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{channel.group}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setMobileListOpen((v) => !v)}
+            className="flex items-center gap-1 text-xs text-primary font-medium hover:text-primary/80 transition-colors"
+          >
+            <List className="h-3.5 w-3.5" />
+            {mobileListOpen ? "Thu gọn" : "Kênh"}
+          </button>
+        </div>
 
         <div
           className="flex-1 min-h-0 overflow-hidden"
@@ -178,12 +128,31 @@ export default function ChannelPage() {
     <div className="-mx-4 md:-mx-6 flex" style={{ height: "calc(100dvh - 3.5rem)" }}>
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex-1 bg-black min-h-0">
-          <VideoPlayer ref={playerRef} url={channel.url} name={channel.name} />
+          <VideoPlayer url={channel.url} name={channel.name} />
         </div>
-        {infoBar}
+
+        {/* Info bar */}
+        <div className="flex items-center gap-3 px-4 py-2 glass border-t border-white/5 shrink-0">
+          <div className="w-7 h-7 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center ring-1 ring-white/10">
+            {channel.logo ? (
+              <img src={channel.logo} alt="" className="w-full h-full object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            ) : (
+              <Tv className="h-3.5 w-3.5 text-muted-foreground/40" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold truncate">{channel.name}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{channel.group}</p>
+          </div>
+          <span className="live-badge px-2 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider">
+            Live
+          </span>
+        </div>
       </div>
 
-      {/* Hover zone — right edge trigger */}
+      {/* Hover zone — right edge */}
       <div
         className="absolute right-0 top-0 bottom-0 w-4 z-30"
         onMouseEnter={() => { cancelHide(); setShowSidebar(true); }}
