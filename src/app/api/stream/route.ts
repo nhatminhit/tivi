@@ -28,7 +28,7 @@ async function getVNProxies(): Promise<{ url: string; agent: ProxyAgent }[]> {
 async function fetchViaProxy(
   url: string,
   headers: Record<string, string>,
-): Promise<{ status: number; contentType: string; body: Uint8Array }> {
+): Promise<{ status: number; contentType: string; body: Buffer }> {
   const proxies = await getVNProxies();
 
   // Try up to 3 VN proxies
@@ -37,10 +37,10 @@ async function fetchViaProxy(
       const res = await undiciFetch(url, { dispatcher: agent, headers, signal: AbortSignal.timeout(10000) });
       if (res.status >= 400) {
         const body = await res.arrayBuffer();
-        return { status: res.status, contentType: res.headers.get("content-type") || "", body: new Uint8Array(body) };
+        return { status: res.status, contentType: res.headers.get("content-type") || "", body: Buffer.from(body) };
       }
       const body = await res.arrayBuffer();
-      return { status: res.status, contentType: res.headers.get("content-type") || "", body: new Uint8Array(body) };
+      return { status: res.status, contentType: res.headers.get("content-type") || "", body: Buffer.from(body) };
     } catch {
       continue;
     }
@@ -49,7 +49,7 @@ async function fetchViaProxy(
   // Fallback: direct
   const res = await undiciFetch(url, { headers, signal: AbortSignal.timeout(10000) });
   const body = await res.arrayBuffer();
-  return { status: res.status, contentType: res.headers.get("content-type") || "", body: new Uint8Array(body) };
+  return { status: res.status, contentType: res.headers.get("content-type") || "", body: Buffer.from(body) };
 }
 
 // ── Referer map ───────────────────────────────────────────────
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
     const upstream = await fetchViaProxy(parsed.href, headers);
 
     if (upstream.status >= 400) {
-      return new NextResponse(upstream.body, {
+      return new NextResponse(upstream.body as unknown as BodyInit, {
         status: upstream.status,
         headers: { "Content-Type": upstream.contentType || "text/plain" },
       });
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
       targetUrl.includes(".m3u");
 
     if (isM3U) {
-      const text = new TextDecoder().decode(upstream.body);
+      const text = upstream.body.toString("utf-8");
       const rewritten = rewriteM3U(text, parsed);
       return new NextResponse(rewritten, {
         headers: {
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return new NextResponse(upstream.body, {
+    return new NextResponse(upstream.body as unknown as BodyInit, {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Cache-Control": "public, max-age=60",
