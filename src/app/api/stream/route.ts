@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   const referer = request.nextUrl.searchParams.get("referer") || undefined;
   const userAgent =
     request.nextUrl.searchParams.get("userAgent") ||
-    "VLC/3.0.21 LibVLC/3.0.21";
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
 
   const headers: Record<string, string> = {
     "User-Agent": userAgent,
