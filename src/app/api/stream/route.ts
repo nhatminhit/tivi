@@ -16,20 +16,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid url" }, { status: 400 });
   }
 
-  const referer = request.nextUrl.searchParams.get("referer") || undefined;
+  const referer =
+    request.nextUrl.searchParams.get("referer") || `${parsed.origin}/`;
   const userAgent =
     request.nextUrl.searchParams.get("userAgent") ||
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
 
   const headers: Record<string, string> = {
     "User-Agent": userAgent,
+    Referer: referer,
+    Origin: parsed.origin,
     Accept: "*/*",
     "Accept-Encoding": "identity",
   };
-  if (referer) {
-    headers["Referer"] = referer;
-    headers["Origin"] = parsed.origin;
-  }
 
   const upstream = await fetch(parsed.href, {
     headers,
