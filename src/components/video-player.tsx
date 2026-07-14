@@ -7,9 +7,18 @@ import { Slider } from "@/components/ui/slider";
 interface VideoPlayerProps {
   url: string;
   name: string;
+  userAgent?: string;
+  referer?: string;
 }
 
-export default function VideoPlayer({ url, name }: VideoPlayerProps) {
+function proxyUrl(url: string, userAgent?: string, referer?: string): string {
+  let u = `/api/stream?url=${encodeURIComponent(url)}`;
+  if (userAgent) u += `&userAgent=${encodeURIComponent(userAgent)}`;
+  if (referer) u += `&referer=${encodeURIComponent(referer)}`;
+  return u;
+}
+
+export default function VideoPlayer({ url, name, userAgent, referer }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,7 +50,6 @@ export default function VideoPlayer({ url, name }: VideoPlayerProps) {
     }, 20000);
 
     if (url.includes(".m3u8")) {
-      video.crossOrigin = "anonymous";
       const hls = new Hls({
         lowLatencyMode: false,
         backBufferLength: 30,
@@ -51,7 +59,7 @@ export default function VideoPlayer({ url, name }: VideoPlayerProps) {
         liveSyncDurationCount: 3,
       });
       hlsRef.current = hls;
-      hls.loadSource(url);
+      hls.loadSource(proxyUrl(url, userAgent, referer));
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (mountedRef.current) setLoading(false);
@@ -65,7 +73,7 @@ export default function VideoPlayer({ url, name }: VideoPlayerProps) {
         else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
       });
     } else {
-      video.src = url;
+      video.src = proxyUrl(url, userAgent, referer);
       video.onloadedmetadata = () => {
         if (mountedRef.current) setLoading(false);
       };

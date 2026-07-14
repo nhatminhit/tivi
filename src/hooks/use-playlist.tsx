@@ -112,7 +112,10 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const content = await res.text();
-      const parsed = parseM3U(content);
+      const EXCLUDED_GROUPS = ["VTV", "HTV", "Phim", "Radio", "Địa phương"];
+      const parsed = parseM3U(content).filter(
+        (ch) => !EXCLUDED_GROUPS.includes(ch.group)
+      );
       if (parsed.length === 0) throw new Error("Không tìm thấy kênh nào");
       const name = url.split("/").pop() || "Playlist";
       await saveAndActivate(

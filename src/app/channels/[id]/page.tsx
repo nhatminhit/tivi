@@ -80,7 +80,7 @@ export default function ChannelPage() {
           className={`bg-black shrink-0 ${mobileListOpen ? "h-[40dvh]" : "flex-1"}`}
           style={{ transition: "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)" }}
         >
-          <VideoPlayer url={channel.url} name={channel.name} />
+          <VideoPlayer url={channel.url} name={channel.name} userAgent={channel.userAgent} referer={channel.referer} />
         </div>
 
         <div className="flex items-center justify-between gap-3 px-3 py-2 glass border-t border-white/5 shrink-0">
@@ -128,7 +128,7 @@ export default function ChannelPage() {
     <div className="-mx-4 md:-mx-6 flex" style={{ height: "calc(100dvh - 3.5rem)" }}>
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex-1 bg-black min-h-0">
-          <VideoPlayer url={channel.url} name={channel.name} />
+          <VideoPlayer url={channel.url} name={channel.name} userAgent={channel.userAgent} referer={channel.referer} />
         </div>
 
         {/* Info bar */}
