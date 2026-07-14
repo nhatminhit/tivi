@@ -1,10 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
-import https from "node:https";
-import http from "node:http";
+import { ProxyAgent, fetch as undiciFetch } from "undici";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
+// ── Proxy pool ────────────────────────────────────────────────
+let proxyCache: { url: string; agent: ProxyAgent }[] = [];
+let proxyCacheExpiry = 0;
+
+async function getVNProxies(): Promise<{ url: string; agent: ProxyAgent }[]> {
+  if (proxyCache.length > 0 && Date.now() < proxyCacheExpiry) return proxyCache;
+  try {
+    const res = await fetch(
+      "https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&proxy_format=protocolipport&format=text&country=vn&protocol=http&timeout=3000",
+      { signal: AbortSignal.timeout(5000) }
+    );
+    const text = await res.text();
+    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 15);
+    proxyCache = lines.map((url) => ({ url, agent: new ProxyAgent({ uri: url }) }));
+    proxyCacheExpiry = Date.now() + 5 * 60 * 1000;
+  } catch {
+    // keep stale cache
+  }
+  return proxyCache;
+}
+
+async function fetchViaProxy(
+  url: string,
+  headers: Record<string, string>,
+): Promise<{ status: number; contentType: string; body: Uint8Array }> {
+  const proxies = await getVNProxies();
+
+  // Try up to 3 VN proxies
+  for (const { agent } of proxies.slice(0, 3)) {
+    try {
+      const res = await undiciFetch(url, { dispatcher: agent, headers, signal: AbortSignal.timeout(10000) });
+      if (res.status >= 400) {
+        const body = await res.arrayBuffer();
+        return { status: res.status, contentType: res.headers.get("content-type") || "", body: new Uint8Array(body) };
+      }
+      const body = await res.arrayBuffer();
+      return { status: res.status, contentType: res.headers.get("content-type") || "", body: new Uint8Array(body) };
+    } catch {
+      continue;
+    }
+  }
+
+  // Fallback: direct
+  const res = await undiciFetch(url, { headers, signal: AbortSignal.timeout(10000) });
+  const body = await res.arrayBuffer();
+  return { status: res.status, contentType: res.headers.get("content-type") || "", body: new Uint8Array(body) };
+}
+
+// ── Referer map ───────────────────────────────────────────────
 const REFERER_MAP: Record<string, string> = {
   "fptplay53.net": "https://fptplay.vn/",
   "fptplay.vn": "https://fptplay.vn/",
@@ -23,32 +71,6 @@ function inferReferer(url: URL): string {
   return `${url.origin}/`;
 }
 
-function httpGet(
-  url: string,
-  headers: Record<string, string>,
-): Promise<{ status: number; contentType: string; body: Buffer }> {
-  return new Promise((resolve, reject) => {
-    const mod = url.startsWith("https") ? https : http;
-    const req = mod.get(url, { headers, timeout: 15000 }, (res) => {
-      if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        httpGet(res.headers.location, headers).then(resolve).catch(reject);
-        return;
-      }
-      const chunks: Buffer[] = [];
-      res.on("data", (chunk: Buffer) => chunks.push(chunk));
-      res.on("end", () => {
-        resolve({
-          status: res.statusCode || 500,
-          contentType: res.headers["content-type"] || "",
-          body: Buffer.concat(chunks),
-        });
-      });
-    });
-    req.on("error", reject);
-    req.on("timeout", () => { req.destroy(); reject(new Error("timeout")); });
-  });
-}
-
 function rewriteM3U(content: string, base: URL): string {
   return content.replace(
     /^(?!#)(.+)$/gm,
@@ -65,6 +87,7 @@ function rewriteM3U(content: string, base: URL): string {
   );
 }
 
+// ── Handler ───────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
   const targetUrl = request.nextUrl.searchParams.get("url");
   if (!targetUrl) {
@@ -92,7 +115,7 @@ export async function GET(request: NextRequest) {
   };
 
   try {
-    const upstream = await httpGet(parsed.href, headers);
+    const upstream = await fetchViaProxy(parsed.href, headers);
 
     if (upstream.status >= 400) {
       return new NextResponse(upstream.body, {
@@ -107,7 +130,7 @@ export async function GET(request: NextRequest) {
       targetUrl.includes(".m3u");
 
     if (isM3U) {
-      const text = upstream.body.toString("utf-8");
+      const text = new TextDecoder().decode(upstream.body);
       const rewritten = rewriteM3U(text, parsed);
       return new NextResponse(rewritten, {
         headers: {
