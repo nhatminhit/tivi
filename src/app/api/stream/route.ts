@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   const referer =
-    request.nextUrl.searchParams.get("referer") || `${parsed.origin}/`;
+    request.nextUrl.searchParams.get("referer") || inferReferer(parsed);
   const userAgent =
     request.nextUrl.searchParams.get("userAgent") ||
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
@@ -66,6 +66,16 @@ export async function GET(request: NextRequest) {
   if (ct) resHeaders["Content-Type"] = ct;
 
   return new NextResponse(upstream.body, { headers: resHeaders });
+}
+
+function inferReferer(url: URL): string {
+  // CDN subdomains like live.fptplay53.net → parent is fptplay.vn
+  const parts = url.hostname.split(".");
+  if (parts.length >= 3) {
+    const main = parts.slice(-2).join(".");
+    return `${url.protocol}//${main}/`;
+  }
+  return `${url.origin}/`;
 }
 
 function rewriteM3U(content: string, base: URL): string {
