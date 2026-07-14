@@ -68,12 +68,23 @@ export async function GET(request: NextRequest) {
   return new NextResponse(upstream.body, { headers: resHeaders });
 }
 
+// CDN domains that need a different Referer than their own origin
+const REFERER_MAP: Record<string, string> = {
+  "fptplay53.net": "https://fptplay.vn/",
+  "fptplay.vn": "https://fptplay.vn/",
+  "vtv.vn": "https://vtv.vn/",
+  "vtvgo.vn": "https://vtvgo.vn/",
+  "htvc.vn": "https://htvc.vn/",
+  "tv360.vn": "https://tv360.vn/",
+};
+
 function inferReferer(url: URL): string {
-  // CDN subdomains like live.fptplay53.net → parent is fptplay.vn
-  const parts = url.hostname.split(".");
-  if (parts.length >= 3) {
-    const main = parts.slice(-2).join(".");
-    return `${url.protocol}//${main}/`;
+  const host = url.hostname;
+  // Direct match
+  if (REFERER_MAP[host]) return REFERER_MAP[host];
+  // Check if host ends with a mapped domain (e.g. cdn.example.com → example.com)
+  for (const [domain, ref] of Object.entries(REFERER_MAP)) {
+    if (host.endsWith(`.${domain}`)) return ref;
   }
   return `${url.origin}/`;
 }
